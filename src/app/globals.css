@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #F8F5F0;
+  --foreground: #1A1A1A;
+  --primary: #F8F5F0;
+  --secondary: #EDE3D9;
+  --accent: #D6C3B3;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: system-ui, -apple-system, San Francisco, Helvetica, Arial, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b8a89c;
+}
