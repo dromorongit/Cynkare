@@ -1,12 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { Instagram, Facebook, MapPin, Phone, Mail } from 'lucide-react';
+import { MapPin, Phone, Mail } from 'lucide-react';
+import { FaInstagram, FaFacebook, FaTiktok, FaSnapchatGhost } from 'react-icons/fa';
 
 export default function Footer() {
   const socialLinks = [
-    { icon: Instagram, href: 'https://www.instagram.com/cynkare.gh', label: 'Instagram' },
-    { icon: Facebook, href: 'https://www.facebook.com/share/1TNayKdBzX/', label: 'Facebook' },
+    { icon: FaInstagram, href: 'https://www.instagram.com/cynkare.gh', label: 'Instagram' },
+    { icon: FaFacebook, href: 'https://www.facebook.com/share/1TNayKdBzX/', label: 'Facebook' },
+    { icon: FaTiktok, href: 'https://www.tiktok.com/@cynkareshop', label: 'TikTok' },
+    { icon: FaSnapchatGhost, href: 'https://snapchat.com/t/68sGdAOK', label: 'Snapchat' },
   ];
 
   return (
@@ -31,10 +34,10 @@ export default function Footer() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 bg-accent/20 text-text hover:bg-accent hover:text-white transition-colors duration-300"
+                  className="p-2 text-text hover:text-accent transition-all duration-300 hover:scale-110"
                   aria-label={social.label}
                 >
-                  <social.icon className="w-5 h-5" />
+                  <social.icon className="w-6 h-6" />
                 </a>
               ))}
             </div>

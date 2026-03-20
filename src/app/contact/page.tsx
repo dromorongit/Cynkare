@@ -1,12 +1,15 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MapPin, Phone, Mail, MessageCircle, Instagram, Facebook } from 'lucide-react';
+import { MapPin, Phone, Mail, MessageCircle } from 'lucide-react';
+import { FaInstagram, FaFacebook, FaTiktok, FaSnapchatGhost } from 'react-icons/fa';
 
 export default function ContactPage() {
   const socialLinks = [
-    { icon: Instagram, href: 'https://www.instagram.com/cynkare.gh', label: 'Instagram' },
-    { icon: Facebook, href: 'https://www.facebook.com/share/1TNayKdBzX/', label: 'Facebook' },
+    { icon: FaInstagram, href: 'https://www.instagram.com/cynkare.gh', label: 'Instagram' },
+    { icon: FaFacebook, href: 'https://www.facebook.com/share/1TNayKdBzX/', label: 'Facebook' },
+    { icon: FaTiktok, href: 'https://www.tiktok.com/@cynkareshop', label: 'TikTok' },
+    { icon: FaSnapchatGhost, href: 'https://snapchat.com/t/68sGdAOK', label: 'Snapchat' },
   ];
 
   return (
@@ -82,10 +85,10 @@ export default function ContactPage() {
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-12 h-12 bg-accent/20 flex items-center justify-center text-accent hover:bg-accent hover:text-white transition-colors duration-300"
+                    className="w-12 h-12 bg-accent/20 flex items-center justify-center text-text hover:text-accent transition-all duration-300 hover:scale-110"
                     aria-label={social.label}
                   >
-                    <social.icon className="w-5 h-5" />
+                    <social.icon className="w-6 h-6" />
                   </a>
                 ))}
               </div>
