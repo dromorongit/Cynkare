@@ -1,4 +1,4 @@
-import { Product, Category, Testimonial, Subcategory, CategoryWithSubcategories } from '@/types';
+import { Product, Category, Testimonial, CategoryWithSubcategories } from '@/types';
 
 export const skinConcerns = [
   { id: 'acne', name: 'Acne', slug: 'acne' },

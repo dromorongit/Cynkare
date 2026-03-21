@@ -1,7 +1,6 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import { Sparkles, Star, Heart, ArrowDown } from 'lucide-react';
 
 export default function AboutPage() {
@@ -95,7 +94,7 @@ export default function AboutPage() {
           >
             <Heart className="w-12 h-12 text-accent mb-8" />
             <p className="text-lg md:text-xl text-text/70 font-light leading-loose text-center max-w-3xl mx-auto">
-              At Cynkare, we believe beauty is more than just how you look — it's how you feel. From glowing skin to signature fragrances, our goal is to help you step out with confidence, elegance, and ease.
+              At Cynkare, we believe beauty is more than just how you look — it&apos;s how you feel. From glowing skin to signature fragrances, our goal is to help you step out with confidence, elegance, and ease.
             </p>
           </motion.div>
         </div>
@@ -172,7 +171,7 @@ export default function AboutPage() {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-3xl md:text-4xl font-heading text-text mb-8 leading-relaxed">
-              Whether you're building your skincare routine or choosing a scent that defines you, <span className="text-accent">Cynkare</span> is your destination for beauty that speaks before you do.
+              Whether you&apos;re building your skincare routine or choosing a scent that defines you, <span className="text-accent">Cynkare</span> is your destination for beauty that speaks before you do.
             </h2>
           </motion.div>
         </div>

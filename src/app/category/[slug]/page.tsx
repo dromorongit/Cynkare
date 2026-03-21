@@ -4,7 +4,7 @@ import { useState, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { SlidersHorizontal, X, ChevronRight, ArrowLeft } from 'lucide-react';
+import { SlidersHorizontal, X, ChevronRight } from 'lucide-react';
 import ProductCard from '@/components/product/ProductCard';
 import { products, categoriesWithSubcategories, getCategoryBySlug } from '@/lib/products';
 import { SortOption } from '@/types';
