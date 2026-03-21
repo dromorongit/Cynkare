@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// Admin model for authentication
+model Admin {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Category model
+model Category {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  name        String       @unique
+  slug        String       @unique
+  image       String?
+  subcategories Subcategory[]
+  products    Product[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+// Subcategory model
+model Subcategory {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  slug       String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String   @db.ObjectId
+  products   Product[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([name, categoryId])
+}
+
+// Product model
+model Product {
+  id           String       @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  slug         String       @unique
+  description  String
+  shortDescription String?
+  price        Float
+  originalPrice Float?
+  images       String[]
+  inStock      Boolean      @default(true)
+  stockQuantity Int          @default(0)
+  sku          String?
+  featured     Boolean      @default(false)
+  newArrival   Boolean      @default(false)
+  bestSeller   Boolean      @default(false)
+  onSale       Boolean      @default(false)
+  rating       Float?
+  reviewCount  Int?
+  category     Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId   String       @db.ObjectId
+  subcategory  Subcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  subcategoryId String?     @db.ObjectId
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+// Settings model for homepage sections
+model Settings {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
