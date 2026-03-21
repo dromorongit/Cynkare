@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Package, FolderTree, AlertTriangle, TrendingUp, Plus, Eye } from 'lucide-react';
 import Link from 'next/link';
@@ -28,31 +28,30 @@ interface Product {
 }
 
 export default function AdminOverviewPage() {
-  const [stats, setStats] = useState(mockStats);
-  const [recentProducts, setRecentProducts] = useState<Product[]>(mockRecentProducts);
+  const [recentProducts] = useState<Product[]>(mockRecentProducts);
 
   const statCards = [
     {
       name: 'Total Products',
-      value: stats.totalProducts,
+      value: mockStats.totalProducts,
       icon: Package,
       color: 'bg-blue-500',
     },
     {
       name: 'Categories',
-      value: stats.totalCategories,
+      value: mockStats.totalCategories,
       icon: FolderTree,
       color: 'bg-green-500',
     },
     {
       name: 'Low Stock Items',
-      value: stats.lowStockItems,
+      value: mockStats.lowStockItems,
       icon: AlertTriangle,
       color: 'bg-yellow-500',
     },
     {
       name: 'Page Views',
-      value: stats.totalViews.toLocaleString(),
+      value: mockStats.totalViews.toLocaleString(),
       icon: TrendingUp,
       color: 'bg-purple-500',
     },
@@ -63,7 +62,7 @@ export default function AdminOverviewPage() {
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
-        <p className="text-gray-500 mt-1">Welcome back! Here's what's happening with your store.</p>
+        <p className="text-gray-500 mt-1">Welcome back! Here is what is happening with your store.</p>
       </div>
 
       {/* Stats Grid */}

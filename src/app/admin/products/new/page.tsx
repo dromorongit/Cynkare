@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { ArrowLeft, Upload, X, Save, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 
@@ -301,10 +301,11 @@ export default function NewProductPage() {
               <div className="grid grid-cols-4 gap-4">
                 {formData.images.map((img, index) => (
                   <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group">
-                    <img
+                    <Image
                       src={img}
                       alt={`Product ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
                     />
                     <button
                       type="button"
