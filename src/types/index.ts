@@ -11,6 +11,7 @@ export interface Product {
   inStock: boolean;
   featured?: boolean;
   newArrival?: boolean;
+  concerns?: string[];
   rating?: number;
   reviewCount?: number;
 }

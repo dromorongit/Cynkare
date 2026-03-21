@@ -1,5 +1,12 @@
 import { Product, Category, Testimonial } from '@/types';
 
+export const skinConcerns = [
+  { id: 'acne', name: 'Acne', slug: 'acne' },
+  { id: 'stretch-marks', name: 'Stretch Marks', slug: 'stretch-marks' },
+  { id: 'white-patches', name: 'White Patches', slug: 'white-patches' },
+  { id: 'redness', name: 'Redness', slug: 'redness' },
+];
+
 export const categories: Category[] = [
   {
     id: '1',
@@ -50,6 +57,7 @@ export const products: Product[] = [
     inStock: true,
     featured: true,
     newArrival: false,
+    concerns: ['white-patches', 'redness'],
     rating: 4.8,
     reviewCount: 124,
   },
@@ -68,6 +76,7 @@ export const products: Product[] = [
     inStock: true,
     featured: true,
     newArrival: true,
+    concerns: ['acne', 'redness'],
     rating: 4.9,
     reviewCount: 89,
   },
@@ -87,6 +96,7 @@ export const products: Product[] = [
     inStock: true,
     featured: false,
     newArrival: true,
+    concerns: ['redness'],
     rating: 4.7,
     reviewCount: 56,
   },
@@ -122,6 +132,7 @@ export const products: Product[] = [
     inStock: true,
     featured: false,
     newArrival: true,
+    concerns: ['acne', 'redness'],
     rating: 4.6,
     reviewCount: 78,
   },
@@ -139,6 +150,7 @@ export const products: Product[] = [
     inStock: true,
     featured: false,
     newArrival: false,
+    concerns: ['acne'],
     rating: 4.5,
     reviewCount: 45,
   },
@@ -191,6 +203,7 @@ export const products: Product[] = [
     inStock: true,
     featured: false,
     newArrival: false,
+    concerns: ['white-patches', 'stretch-marks'],
     rating: 4.4,
     reviewCount: 34,
   },
@@ -208,6 +221,7 @@ export const products: Product[] = [
     inStock: true,
     featured: false,
     newArrival: true,
+    concerns: ['stretch-marks', 'redness'],
     rating: 4.6,
     reviewCount: 67,
   },
@@ -296,6 +310,10 @@ export const getFeaturedProducts = (): Product[] => {
 
 export const getNewArrivals = (): Product[] => {
   return products.filter((product) => product.newArrival);
+};
+
+export const getProductsByConcern = (concern: string): Product[] => {
+  return products.filter((product) => product.concerns?.includes(concern));
 };
 
 export const getRelatedProducts = (productId: string): Product[] => {
