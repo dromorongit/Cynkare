@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Settings, LogOut, Search, ShoppingBag } from 'lucide-react';
+import { LogOut, Search, ShoppingBag } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import Footer from '@/components/layout/Footer';
 
