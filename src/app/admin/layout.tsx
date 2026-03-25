@@ -36,7 +36,10 @@ export default function AdminLayout({
     // Check if user is authenticated
     const auth = localStorage.getItem('admin_auth');
     if (!auth) {
-      router.push('/admin/login');
+      // Only redirect if not already on login page
+      if (!window.location.pathname.includes('/admin/login')) {
+        router.push('/admin/login');
+      }
     } else {
       setIsAuthenticated(true);
     }
