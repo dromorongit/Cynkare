@@ -3,24 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  LayoutDashboard, 
-  Package, 
-  FolderTree, 
-  Tags, 
-  Settings, 
-  LogOut,
-  Menu,
-  X,
-  ChevronLeft
-} from 'lucide-react';
+import { Settings, LogOut, Search, ShoppingBag } from 'lucide-react';
+import { useCartStore } from '@/lib/store';
+import Footer from '@/components/layout/Footer';
 
 const navigation = [
-  { name: 'Overview', href: '/admin', icon: LayoutDashboard },
-  { name: 'Products', href: '/admin/products', icon: Package },
-  { name: 'Categories', href: '/admin/categories', icon: FolderTree },
-  { name: 'Subcategories', href: '/admin/subcategories', icon: Tags },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
+  { href: '/admin', label: 'Overview' },
+  { href: '/admin/products', label: 'Products' },
+  { href: '/admin/categories', label: 'Categories' },
+  { href: '/admin/subcategories', label: 'Subcategories' },
+  { href: '/admin/settings', label: 'Settings' },
 ];
 
 export default function AdminLayout({
@@ -29,8 +21,20 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { items, openCart } = useCartStore();
+
+  const totalItems = items.reduce((total, item) => total + item.quantity, 0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     // Check if user is authenticated
@@ -60,86 +64,119 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-200 ease-in-out lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-            <Link href="/admin" className="flex items-center gap-2">
-              <span className="text-xl font-bold text-accent">Cynkare</span>
-              <span className="text-sm text-gray-500">Admin</span>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header - Same style as website but with admin navigation */}
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled ? 'bg-primary/95 backdrop-blur-md shadow-sm' : 'bg-transparent'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            {/* Logo */}
+            <Link href="/admin" className="flex-shrink-0">
+              <img 
+                src="/cynkarelogo.PNG" 
+                alt="Cynkare" 
+                className="h-32 md:h-40 w-auto"
+              />
             </Link>
-            <button 
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-1">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              return (
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-8">
+              {navigation.map((link) => (
                 <Link
-                  key={item.name}
-                  href={item.href}
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 hover:text-accent transition-colors"
-                  onClick={() => setSidebarOpen(false)}
+                  key={link.href}
+                  href={link.href}
+                  className="nav-link text-text hover:text-accent transition-colors duration-300"
                 >
-                  <Icon className="w-5 h-5" />
-                  {item.name}
+                  {link.label}
                 </Link>
-              );
-            })}
-          </nav>
+              ))}
+            </nav>
 
-          {/* Logout */}
-          <div className="px-4 py-4 border-t border-gray-200">
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              Logout
-            </button>
+            {/* Icons */}
+            <div className="flex items-center space-x-4">
+              {/* Search */}
+              <button className="p-2 text-text hover:text-accent transition-colors">
+                <Search className="w-5 h-5" />
+              </button>
+
+              {/* Cart */}
+              <button
+                onClick={openCart}
+                className="p-2 text-text hover:text-accent transition-colors relative"
+              >
+                <ShoppingBag className="w-5 h-5" />
+                {totalItems > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-accent text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                    {totalItems}
+                  </span>
+                )}
+              </button>
+
+              {/* Logout */}
+              <button
+                onClick={handleLogout}
+                className="p-2 text-text hover:text-red-600 transition-colors"
+                title="Logout"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="md:hidden p-2 text-text"
+              >
+                {isMobileMenuOpen ? (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
         </div>
-      </aside>
 
-      {/* Main content */}
-      <div className="lg:pl-64">
-        {/* Top bar */}
-        <header className="sticky top-0 z-30 flex items-center h-16 px-4 bg-white border-b border-gray-200 lg:px-8">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden p-2 mr-4 text-gray-600 hover:text-gray-900"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-          
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Link href="/" className="hover:text-accent">Home</Link>
-            <ChevronLeft className="w-4 h-4" />
-            <span className="text-gray-900">Admin Dashboard</span>
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden bg-primary border-t border-accent/20">
+            <nav className="px-4 py-6 space-y-4">
+              {navigation.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block text-text hover:text-accent transition-colors duration-300 font-medium text-lg"
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <button
+                onClick={handleLogout}
+                className="block text-red-600 hover:text-red-700 transition-colors duration-300 font-medium text-lg"
+              >
+                Logout
+              </button>
+            </nav>
           </div>
-        </header>
+        )}
+      </header>
 
-        {/* Page content */}
-        <main className="p-4 lg:p-8">
+      {/* Page content with top padding for fixed header */}
+      <main className="flex-grow pt-20">
+        <div className="p-4 lg:p-8">
           {children}
-        </main>
-      </div>
+        </div>
+      </main>
+
+      {/* Footer - Same as website */}
+      <Footer />
     </div>
   );
 }
