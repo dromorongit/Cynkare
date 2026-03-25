@@ -35,11 +35,16 @@ export default function AdminLayout({
   useEffect(() => {
     // Check if user is authenticated
     const auth = localStorage.getItem('admin_auth');
+    const currentPath = window.location.pathname;
+    
+    // Allow access to login page without authentication
+    if (currentPath === '/admin/login') {
+      setIsAuthenticated(true);
+      return;
+    }
+    
     if (!auth) {
-      // Only redirect if not already on login page
-      if (!window.location.pathname.includes('/admin/login')) {
-        router.push('/admin/login');
-      }
+      router.push('/admin/login');
     } else {
       setIsAuthenticated(true);
     }
