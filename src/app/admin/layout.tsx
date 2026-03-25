@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LogOut, Search, ShoppingBag } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
-import Footer from '@/components/layout/Footer';
 
 const navigation = [
   { href: '/admin', label: 'Overview' },
@@ -14,6 +13,55 @@ const navigation = [
   { href: '/admin/subcategories', label: 'Subcategories' },
   { href: '/admin/settings', label: 'Settings' },
 ];
+
+// Admin-specific footer without public navigation links
+function AdminFooter() {
+  return (
+    <footer className="bg-secondary">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* Brand */}
+          <div className="md:col-span-2">
+            <img 
+              src="/cynkarelogo.PNG" 
+              alt="Cynkare" 
+              className="h-40 w-auto mb-4"
+            />
+            <p className="text-text/70 mb-6 max-w-md">
+              Premium skincare and beauty essentials for glowing, flawless skin. 
+              Glow starts here with our curated collection of luxury products.
+            </p>
+          </div>
+
+          {/* Contact Info */}
+          <div>
+            <h3 className="font-heading text-lg font-semibold text-text mb-4">
+              Contact Us
+            </h3>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-3 text-text/70">
+                <span>Accra, Ghana</span>
+              </li>
+              <li className="flex items-center gap-3 text-text/70">
+                <span>+233 55 488 2542</span>
+              </li>
+              <li className="flex items-center gap-3 text-text/70">
+                <span>thecynkare@gmail.com</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Bottom */}
+        <div className="border-t border-accent/20 mt-12 pt-8">
+          <p className="text-center text-text/60">
+            © {new Date().getFullYear()} Cynkare Admin. All rights reserved.
+          </p>
+        </div>
+      </div>
+    </footer>
+  );
+}
 
 export default function AdminLayout({
   children,
@@ -65,7 +113,7 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header - Same style as website but with admin navigation */}
+      {/* Header - Same style as website but with admin-only navigation */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled ? 'bg-primary/95 backdrop-blur-md shadow-sm' : 'bg-transparent'
@@ -82,7 +130,7 @@ export default function AdminLayout({
               />
             </Link>
 
-            {/* Desktop Navigation */}
+            {/* Desktop Navigation - Admin only links */}
             <nav className="hidden md:flex items-center space-x-8">
               {navigation.map((link) => (
                 <Link
@@ -175,8 +223,8 @@ export default function AdminLayout({
         </div>
       </main>
 
-      {/* Footer - Same as website */}
-      <Footer />
+      {/* Footer - Admin-specific without public navigation */}
+      <AdminFooter />
     </div>
   );
 }
