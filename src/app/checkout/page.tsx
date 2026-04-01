@@ -4,11 +4,14 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ChevronLeft, Lock } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import { formatPrice, convertToGHS } from '@/lib/utils';
+import { initializePaystackPayment, generatePaymentReference } from '@/lib/paystack';
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const { items, getSubtotal, clearCart } = useCartStore();
   const subtotal = getSubtotal();
   
@@ -19,22 +22,70 @@ export default function CheckoutPage() {
     address: '',
   });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
+    setError(null);
 
-    // In a real implementation, this would initialize Paystack
-    // For demo, we'll show a success message
-    setTimeout(() => {
-      alert('Payment processing would be initialized here with Paystack');
+    // Validate form
+    if (!formData.name || !formData.phone || !formData.address) {
+      setError('Please fill in all required fields');
       setIsProcessing(false);
-      clearCart();
-    }, 2000);
+      return;
+    }
+
+    // Validate email if provided
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setError('Please enter a valid email address');
+      setIsProcessing(false);
+      return;
+    }
+
+    // Generate payment reference
+    const reference = generatePaymentReference();
+    
+    // Calculate total amount in GHS
+    const totalAmount = convertToGHS(subtotal);
+
+    // Initialize Paystack payment
+    initializePaystackPayment({
+      email: formData.email || 'customer@cynkare.com',
+      amount: totalAmount,
+      reference,
+      onSuccess: (paymentReference: string) => {
+        // Prepare order details for success page
+        const orderDetails = {
+          reference: paymentReference,
+          items: items.map(item => ({
+            name: item.product.name,
+            quantity: item.quantity,
+            price: convertToGHS(item.product.price * item.quantity),
+          })),
+          total: totalAmount,
+          customerName: formData.name,
+          customerPhone: formData.phone,
+          customerAddress: formData.address,
+        };
+
+        // Encode order details for URL
+        const encodedOrder = encodeURIComponent(JSON.stringify(orderDetails));
+        
+        // Clear cart and redirect to success page with order details
+        clearCart();
+        router.push(`/checkout/success?order=${encodedOrder}`);
+      },
+      onCancel: () => {
+        setIsProcessing(false);
+        setError('Payment was cancelled. Please try again.');
+      },
+    });
   };
 
   if (items.length === 0) {
@@ -78,6 +129,13 @@ export default function CheckoutPage() {
           {/* Checkout Form */}
           <div className="lg:col-span-2">
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                  {error}
+                </div>
+              )}
+
               {/* Contact Information */}
               <div className="bg-secondary/30 p-6">
                 <h2 className="font-heading text-xl font-semibold text-text mb-6">
