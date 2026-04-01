@@ -1,11 +1,58 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { categoriesWithSubcategories } from '@/lib/products';
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  image?: string;
+  subcategories: any[];
+}
 
 export default function Categories() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories');
+      const data = await response.json();
+      setCategories(data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <section className="py-20 bg-primary">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-section font-heading text-text mb-4">
+              Shop by Category
+            </h2>
+            <p className="text-body text-text/60 max-w-2xl mx-auto">
+              Explore our curated collection of premium skincare and beauty products
+            </p>
+          </div>
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-20 bg-primary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -27,38 +74,50 @@ export default function Categories() {
 
         {/* Categories Vertical Stack - Image Banners */}
         <div className="flex flex-col gap-6">
-          {categoriesWithSubcategories.map((category, index) => (
-            <motion.div
-              key={category.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: index * 0.1 }}
-            >
-              <Link href={`/category/${category.slug}`}>
-                <div className="group relative h-[180px] rounded-lg overflow-hidden">
-                  <Image
-                    src={category.image}
-                    alt={category.name}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  {/* Dark Overlay */}
-                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors duration-300" />
-                  
-                  {/* Content */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="bg-white text-black px-5 py-2.5 rounded-lg font-medium text-sm shadow-lg group-hover:scale-105 transition-transform duration-300">
-                      {category.name}
-                    </span>
-                    <span className="text-white/80 text-xs mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      {category.subcategories.length} subcategories
-                    </span>
+          {categories.length > 0 ? (
+            categories.map((category, index) => (
+              <motion.div
+                key={category.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+              >
+                <Link href={`/category/${category.slug}`}>
+                  <div className="group relative h-[180px] rounded-lg overflow-hidden">
+                    {category.image ? (
+                      <Image
+                        src={category.image}
+                        alt={category.name}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-400">No image</span>
+                      </div>
+                    )}
+                    {/* Dark Overlay */}
+                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors duration-300" />
+                    
+                    {/* Content */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="bg-white text-black px-5 py-2.5 rounded-lg font-medium text-sm shadow-lg group-hover:scale-105 transition-transform duration-300">
+                        {category.name}
+                      </span>
+                      <span className="text-white/80 text-xs mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        {category.subcategories?.length || 0} subcategories
+                      </span>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
+                </Link>
+              </motion.div>
+            ))
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              No categories available yet.
+            </div>
+          )}
         </div>
       </div>
     </section>

@@ -31,13 +31,19 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         <div className="relative overflow-hidden bg-secondary">
           {/* Product Image */}
           <div className="aspect-square relative">
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            />
+            {product.images && product.images.length > 0 ? (
+              <Image
+                src={product.images[0]}
+                alt={product.name}
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                No image
+              </div>
+            )}
             
             {/* Badges */}
             <div className="absolute top-3 left-3 flex flex-col gap-2">
@@ -70,7 +76,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
           {/* Product Info */}
           <div className="p-4">
-            <p className="text-sm text-gray-500 mb-1">{product.category}</p>
+            <p className="text-sm text-gray-500 mb-1">{product.category.name}</p>
             <h3 className="text-product-title font-body text-text group-hover:text-accent transition-colors duration-300 line-clamp-1">
               {product.name}
             </h3>

@@ -1,61 +1,104 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Package, FolderTree, AlertTriangle, TrendingUp, Plus, Eye } from 'lucide-react';
 import Link from 'next/link';
-
-// Mock data for demonstration
-const mockStats = {
-  totalProducts: 12,
-  totalCategories: 5,
-  lowStockItems: 3,
-  totalViews: 1250,
-};
-
-const mockRecentProducts = [
-  { id: '1', name: 'Luxury Whitening Body Lotion', price: 89.99, stock: 15, status: 'In Stock' },
-  { id: '2', name: 'Premium African Black Soap', price: 24.99, stock: 8, status: 'Low Stock' },
-  { id: '3', name: 'Hydrating Face Cream', price: 65.00, stock: 0, status: 'Out of Stock' },
-];
 
 interface Product {
   id: string;
   name: string;
   price: number;
-  stock: number;
-  status: string;
+  stockQuantity: number;
+  inStock: boolean;
+}
+
+interface Stats {
+  totalProducts: number;
+  totalCategories: number;
+  lowStockItems: number;
+  totalViews: number;
 }
 
 export default function AdminOverviewPage() {
-  const [recentProducts] = useState<Product[]>(mockRecentProducts);
+  const [stats, setStats] = useState<Stats>({
+    totalProducts: 0,
+    totalCategories: 0,
+    lowStockItems: 0,
+    totalViews: 0,
+  });
+  const [recentProducts, setRecentProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch products
+      const productsRes = await fetch('/api/products');
+      const products = await productsRes.json();
+      
+      // Fetch categories
+      const categoriesRes = await fetch('/api/categories');
+      const categories = await categoriesRes.json();
+      
+      // Calculate stats
+      const lowStock = products.filter((p: Product) => p.stockQuantity > 0 && p.stockQuantity <= 10).length;
+      
+      setStats({
+        totalProducts: products.length,
+        totalCategories: categories.length,
+        lowStockItems: lowStock,
+        totalViews: 0, // This would need analytics integration
+      });
+      
+      // Get recent products (last 5)
+      setRecentProducts(products.slice(0, 5));
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const statCards = [
     {
       name: 'Total Products',
-      value: mockStats.totalProducts,
+      value: stats.totalProducts,
       icon: Package,
       color: 'bg-blue-500',
     },
     {
       name: 'Categories',
-      value: mockStats.totalCategories,
+      value: stats.totalCategories,
       icon: FolderTree,
       color: 'bg-green-500',
     },
     {
       name: 'Low Stock Items',
-      value: mockStats.lowStockItems,
+      value: stats.lowStockItems,
       icon: AlertTriangle,
       color: 'bg-yellow-500',
     },
     {
       name: 'Page Views',
-      value: mockStats.totalViews.toLocaleString(),
+      value: stats.totalViews.toLocaleString(),
       icon: TrendingUp,
       color: 'bg-purple-500',
     },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -132,26 +175,38 @@ export default function AdminOverviewPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {recentProducts.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{product.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">${product.price.toFixed(2)}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{product.stock}</td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                        product.status === 'In Stock'
-                          ? 'bg-green-100 text-green-800'
-                          : product.status === 'Low Stock'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {product.status}
-                    </span>
+              {recentProducts.length > 0 ? (
+                recentProducts.map((product) => (
+                  <tr key={product.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{product.name}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">${product.price.toFixed(2)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{product.stockQuantity}</td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                          product.inStock && product.stockQuantity > 10
+                            ? 'bg-green-100 text-green-800'
+                            : product.inStock && product.stockQuantity > 0
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {product.inStock && product.stockQuantity > 10
+                          ? 'In Stock'
+                          : product.inStock && product.stockQuantity > 0
+                          ? 'Low Stock'
+                          : 'Out of Stock'}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                    No products yet. Add your first product to get started!
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

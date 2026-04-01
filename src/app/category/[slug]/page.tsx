@@ -1,43 +1,98 @@
 'use client';
 
-import { useState, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { SlidersHorizontal, X, ChevronRight } from 'lucide-react';
 import ProductCard from '@/components/product/ProductCard';
-import { products, categoriesWithSubcategories, getCategoryBySlug } from '@/lib/products';
 import { SortOption } from '@/types';
+
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  shortDescription?: string;
+  price: number;
+  originalPrice?: number;
+  images: string[];
+  inStock: boolean;
+  stockQuantity: number;
+  featured: boolean;
+  newArrival: boolean;
+  bestSeller: boolean;
+  onSale: boolean;
+  rating?: number;
+  reviewCount?: number;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  subcategory?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+}
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  image?: string;
+  subcategories: any[];
+}
 
 function CategoryContent() {
   const searchParams = useSearchParams();
   const categorySlug = searchParams.get('category');
   const subcategoryParam = searchParams.get('subcategory');
   
-  const category = getCategoryBySlug(categorySlug || '');
-  
+  const [category, setCategory] = useState<Category | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>(subcategoryParam || 'all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200]);
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [showFilters, setShowFilters] = useState(false);
 
+  useEffect(() => {
+    fetchData();
+  }, [categorySlug]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch categories
+      const categoriesRes = await fetch('/api/categories');
+      const categories = await categoriesRes.json();
+      
+      const foundCategory = categories.find((c: Category) => c.slug === categorySlug);
+      setCategory(foundCategory || null);
+      
+      // Fetch products for this category
+      if (foundCategory) {
+        const productsRes = await fetch(`/api/products?categoryId=${foundCategory.id}`);
+        const productsData = await productsRes.json();
+        setProducts(productsData);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredProducts = useMemo(() => {
     let filtered = [...products];
-
-    // Filter by category
-    if (categorySlug) {
-      const categoryName = categoriesWithSubcategories.find(
-        (c) => c.slug === categorySlug
-      )?.name;
-      if (categoryName) {
-        filtered = filtered.filter((p) => p.category === categoryName);
-      }
-    }
 
     // Filter by subcategory
     if (selectedSubcategory !== 'all') {
       filtered = filtered.filter(
-        (p) => p.subcategory?.toLowerCase().replace(/\s+/g, '-') === selectedSubcategory
+        (p) => p.subcategory?.slug === selectedSubcategory
       );
     }
 
@@ -52,7 +107,7 @@ function CategoryContent() {
         filtered.sort((a, b) => a.price - b.price);
         break;
       case 'price_high':
-        filtered.sort((b, a) => a.price - b.price);
+        filtered.sort((a, b) => b.price - a.price);
         break;
       case 'newest':
       default:
@@ -60,7 +115,15 @@ function CategoryContent() {
     }
 
     return filtered;
-  }, [categorySlug, selectedSubcategory, priceRange, sortBy]);
+  }, [products, selectedSubcategory, priceRange, sortBy]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-20 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+      </div>
+    );
+  }
 
   if (!category) {
     return (
@@ -109,42 +172,44 @@ function CategoryContent() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Subcategories Navigation */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-10"
-        >
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-sm font-medium text-text/60">Filter by:</span>
-          </div>
-          
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => setSelectedSubcategory('all')}
-              className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
-                selectedSubcategory === 'all'
-                  ? 'bg-accent text-white shadow-md'
-                  : 'bg-secondary/50 text-text/70 hover:bg-secondary hover:text-text'
-              }`}
-            >
-              All {category.name}
-            </button>
-            {category.subcategories.map((subcategory) => (
+        {category.subcategories && category.subcategories.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-10"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm font-medium text-text/60">Filter by:</span>
+            </div>
+            
+            <div className="flex flex-wrap gap-3">
               <button
-                key={subcategory.id}
-                onClick={() => setSelectedSubcategory(subcategory.slug)}
+                onClick={() => setSelectedSubcategory('all')}
                 className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
-                  selectedSubcategory === subcategory.slug
+                  selectedSubcategory === 'all'
                     ? 'bg-accent text-white shadow-md'
                     : 'bg-secondary/50 text-text/70 hover:bg-secondary hover:text-text'
                 }`}
               >
-                {subcategory.name}
+                All {category.name}
               </button>
-            ))}
-          </div>
-        </motion.div>
+              {category.subcategories.map((subcategory) => (
+                <button
+                  key={subcategory.id}
+                  onClick={() => setSelectedSubcategory(subcategory.slug)}
+                  className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
+                    selectedSubcategory === subcategory.slug
+                      ? 'bg-accent text-white shadow-md'
+                      : 'bg-secondary/50 text-text/70 hover:bg-secondary hover:text-text'
+                  }`}
+                >
+                  {subcategory.name}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Mobile Filter Toggle */}
         <button

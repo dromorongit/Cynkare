@@ -2,17 +2,27 @@ export interface Product {
   id: string;
   name: string;
   slug: string;
-  category: string;
-  subcategory?: string;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  subcategory?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
   price: number;
   originalPrice?: number;
   description: string;
-  shortDescription: string;
+  shortDescription?: string;
   images: string[];
   inStock: boolean;
+  stockQuantity: number;
   featured?: boolean;
   newArrival?: boolean;
-  concerns?: string[];
+  bestSeller?: boolean;
+  onSale?: boolean;
   rating?: number;
   reviewCount?: number;
 }
@@ -45,7 +55,7 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
-  image: string;
+  image?: string;
 }
 
 export type SortOption = 'newest' | 'price_low' | 'price_high';

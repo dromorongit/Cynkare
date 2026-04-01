@@ -1,43 +1,71 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Edit2, Trash2, FolderTree, X } from 'lucide-react';
 
-// Mock data
-const mockSubcategories = [
-  { id: '1', name: 'Wig Caps', category: 'Hair & Accessories', slug: 'wig-caps', productCount: 5 },
-  { id: '2', name: 'Closures', category: 'Wig Caps', slug: 'closures', productCount: 3 },
-  { id: '3', name: 'Frontals', category: 'Wig Caps', slug: 'frontals', productCount: 2 },
-  { id: '4', name: 'Men Perfumes', category: 'Perfumes', slug: 'men-perfumes', productCount: 8 },
-  { id: '5', name: 'Women Perfumes', category: 'Perfumes', slug: 'women-perfumes', productCount: 12 },
-  { id: '6', name: 'Deodorants', category: 'Perfumes', slug: 'deodorants', productCount: 6 },
-  { id: '7', name: 'Body Mists', category: 'Perfumes', slug: 'body-mists', productCount: 4 },
-  { id: '8', name: 'Perfume Oils', category: 'Perfumes', slug: 'perfume-oils', productCount: 3 },
-  { id: '9', name: 'Lace Closures', category: 'Hair & Accessories', slug: 'lace-closures', productCount: 4 },
-  { id: '10', name: 'Lace Frontals', category: 'Hair & Accessories', slug: 'lace-frontals', productCount: 3 },
-];
+interface Subcategory {
+  id: string;
+  name: string;
+  slug: string;
+  category: {
+    id: string;
+    name: string;
+  };
+  _count?: {
+    products: number;
+  };
+}
 
-const categories = ['Hair & Accessories', 'Perfumes', 'Body Lotions', 'Bath Soaps', 'Face Creams & Cleansers'];
+interface Category {
+  id: string;
+  name: string;
+}
 
 export default function AdminSubcategoriesPage() {
-  const [subcategories, setSubcategories] = useState(mockSubcategories);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [editingSubcategory, setEditingSubcategory] = useState<typeof mockSubcategories[0] | null>(null);
+  const [editingSubcategory, setEditingSubcategory] = useState<Subcategory | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; subcategoryId: string | null }>({ show: false, subcategoryId: null });
+  const [loading, setLoading] = useState(true);
   
   const [formData, setFormData] = useState({
     name: '',
-    category: '',
+    categoryId: '',
   });
 
-  const handleOpenModal = (subcategory?: typeof mockSubcategories[0]) => {
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch subcategories
+      const subcategoriesRes = await fetch('/api/subcategories');
+      const subcategoriesData = await subcategoriesRes.json();
+      setSubcategories(subcategoriesData);
+      
+      // Fetch categories
+      const categoriesRes = await fetch('/api/categories');
+      const categoriesData = await categoriesRes.json();
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenModal = (subcategory?: Subcategory) => {
     if (subcategory) {
       setEditingSubcategory(subcategory);
-      setFormData({ name: subcategory.name, category: subcategory.category });
+      setFormData({ name: subcategory.name, categoryId: subcategory.category.id });
     } else {
       setEditingSubcategory(null);
-      setFormData({ name: '', category: '' });
+      setFormData({ name: '', categoryId: '' });
     }
     setShowModal(true);
   };
@@ -45,44 +73,87 @@ export default function AdminSubcategoriesPage() {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingSubcategory(null);
-    setFormData({ name: '', category: '' });
+    setFormData({ name: '', categoryId: '' });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingSubcategory) {
-      // Update existing
-      setSubcategories(subcategories.map((s) => 
-        s.id === editingSubcategory.id 
-          ? { ...s, name: formData.name, category: formData.category }
-          : s
-      ));
-    } else {
-      // Add new
-      const newSubcategory = {
-        id: Date.now().toString(),
-        name: formData.name,
-        category: formData.category,
-        slug: formData.name.toLowerCase().replace(/\s+/g, '-'),
-        productCount: 0,
-      };
-      setSubcategories([...subcategories, newSubcategory]);
+    try {
+      const slug = formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      
+      if (editingSubcategory) {
+        // Update existing
+        const response = await fetch(`/api/subcategories/${editingSubcategory.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            slug,
+            categoryId: formData.categoryId,
+          }),
+        });
+        
+        if (response.ok) {
+          const updatedSubcategory = await response.json();
+          setSubcategories(subcategories.map((s) => 
+            s.id === editingSubcategory.id ? updatedSubcategory : s
+          ));
+        }
+      } else {
+        // Add new
+        const response = await fetch('/api/subcategories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            slug,
+            categoryId: formData.categoryId,
+          }),
+        });
+        
+        if (response.ok) {
+          const newSubcategory = await response.json();
+          setSubcategories([newSubcategory, ...subcategories]);
+        }
+      }
+      
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error saving subcategory:', error);
     }
-    
-    handleCloseModal();
   };
 
-  const handleDelete = (id: string) => {
-    setSubcategories(subcategories.filter((s) => s.id !== id));
-    setDeleteModal({ show: false, subcategoryId: null });
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/subcategories/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        setSubcategories(subcategories.filter((s) => s.id !== id));
+        setDeleteModal({ show: false, subcategoryId: null });
+      } else {
+        console.error('Failed to delete subcategory');
+      }
+    } catch (error) {
+      console.error('Error deleting subcategory:', error);
+    }
   };
 
   // Group subcategories by category
   const groupedSubcategories = categories.map((category) => ({
     category,
-    subcategories: subcategories.filter((s) => s.category === category),
+    subcategories: subcategories.filter((s) => s.category.id === category.id),
   })).filter((group) => group.subcategories.length > 0);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -103,50 +174,56 @@ export default function AdminSubcategoriesPage() {
 
       {/* Subcategories by Category */}
       <div className="space-y-8">
-        {groupedSubcategories.map((group) => (
-          <div key={group.category}>
-            {/* Category Header */}
-            <div className="flex items-center gap-2 mb-4">
-              <FolderTree className="w-5 h-5 text-accent" />
-              <h2 className="text-lg font-semibold text-gray-900">{group.category}</h2>
-              <span className="text-sm text-gray-500">({group.subcategories.length} subcategories)</span>
-            </div>
+        {groupedSubcategories.length > 0 ? (
+          groupedSubcategories.map((group) => (
+            <div key={group.category.id}>
+              {/* Category Header */}
+              <div className="flex items-center gap-2 mb-4">
+                <FolderTree className="w-5 h-5 text-accent" />
+                <h2 className="text-lg font-semibold text-gray-900">{group.category.name}</h2>
+                <span className="text-sm text-gray-500">({group.subcategories.length} subcategories)</span>
+              </div>
 
-            {/* Subcategories Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {group.subcategories.map((subcategory) => (
-                <motion.div
-                  key={subcategory.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between"
-                >
-                  <div>
-                    <h3 className="font-medium text-gray-900">{subcategory.name}</h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {subcategory.productCount} products
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleOpenModal(subcategory)}
-                      className="p-2 text-gray-400 hover:text-accent transition-colors"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setDeleteModal({ show: true, subcategoryId: subcategory.id })}
-                      className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+              {/* Subcategories Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {group.subcategories.map((subcategory) => (
+                  <motion.div
+                    key={subcategory.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between"
+                  >
+                    <div>
+                      <h3 className="font-medium text-gray-900">{subcategory.name}</h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {subcategory._count?.products || 0} products
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleOpenModal(subcategory)}
+                        className="p-2 text-gray-400 hover:text-accent transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteModal({ show: true, subcategoryId: subcategory.id })}
+                        className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
+          ))
+        ) : (
+          <div className="text-center py-12 text-gray-500">
+            No subcategories yet. Add your first subcategory to get started!
           </div>
-        ))}
+        )}
       </div>
 
       {/* Add/Edit Modal */}
@@ -189,15 +266,15 @@ export default function AdminSubcategoriesPage() {
                 </label>
                 <select
                   id="category"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  value={formData.categoryId}
+                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                 >
                   <option value="">Select category</option>
                   {categories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
                     </option>
                   ))}
                 </select>

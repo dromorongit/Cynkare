@@ -1,22 +1,82 @@
 'use client';
 
-import { useState, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { SlidersHorizontal, X } from 'lucide-react';
 import ProductCard from '@/components/product/ProductCard';
-import { products, categories } from '@/lib/products';
 import Link from 'next/link';
 import { SortOption } from '@/types';
+
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  shortDescription?: string;
+  price: number;
+  originalPrice?: number;
+  images: string[];
+  inStock: boolean;
+  stockQuantity: number;
+  featured: boolean;
+  newArrival: boolean;
+  bestSeller: boolean;
+  onSale: boolean;
+  rating?: number;
+  reviewCount?: number;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  subcategory?: {
+    id: string;
+    name: string;
+  };
+}
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 function ShopContent() {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get('category');
   
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>(categoryParam || 'all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200]);
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch products
+      const productsRes = await fetch('/api/products');
+      const productsData = await productsRes.json();
+      setProducts(productsData);
+      
+      // Fetch categories
+      const categoriesRes = await fetch('/api/categories');
+      const categoriesData = await categoriesRes.json();
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredProducts = useMemo(() => {
     let filtered = [...products];
@@ -24,7 +84,7 @@ function ShopContent() {
     // Filter by category
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(
-        (p) => p.category.toLowerCase().replace(/\s+/g, '-') === selectedCategory
+        (p) => p.category.slug === selectedCategory
       );
     }
 
@@ -47,7 +107,25 @@ function ShopContent() {
     }
 
     return filtered;
-  }, [selectedCategory, priceRange, sortBy]);
+  }, [products, selectedCategory, priceRange, sortBy]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-20">
+        <div className="bg-secondary/30 py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h1 className="text-hero font-heading text-text">Shop</h1>
+            <p className="text-text/60 mt-2">Browse our premium collection</p>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-20">

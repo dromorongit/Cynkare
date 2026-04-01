@@ -1,33 +1,53 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Edit2, Trash2, Image as ImageIcon, X } from 'lucide-react';
 
-// Mock data
-const mockCategories = [
-  { id: '1', name: 'Body Lotions', slug: 'body-lotions', image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=100', subcategories: 3 },
-  { id: '2', name: 'Bath Soaps', slug: 'bath-soaps', image: 'https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=100', subcategories: 3 },
-  { id: '3', name: 'Face Creams & Cleansers', slug: 'face-creams-cleansers', image: 'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=100', subcategories: 4 },
-  { id: '4', name: 'Perfumes', slug: 'perfumes', image: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=100', subcategories: 5 },
-  { id: '5', name: 'Hair & Accessories', slug: 'hair-accessories', image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=100', subcategories: 5 },
-];
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  image?: string;
+  subcategories: any[];
+  _count?: {
+    products: number;
+  };
+}
 
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState(mockCategories);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<typeof mockCategories[0] | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; categoryId: string | null }>({ show: false, categoryId: null });
+  const [loading, setLoading] = useState(true);
   
   const [formData, setFormData] = useState({
     name: '',
     image: '',
   });
 
-  const handleOpenModal = (category?: typeof mockCategories[0]) => {
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/categories');
+      const data = await response.json();
+      setCategories(data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenModal = (category?: Category) => {
     if (category) {
       setEditingCategory(category);
-      setFormData({ name: category.name, image: category.image });
+      setFormData({ name: category.name, image: category.image || '' });
     } else {
       setEditingCategory(null);
       setFormData({ name: '', image: '' });
@@ -41,35 +61,78 @@ export default function AdminCategoriesPage() {
     setFormData({ name: '', image: '' });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingCategory) {
-      // Update existing
-      setCategories(categories.map((c) => 
-        c.id === editingCategory.id 
-          ? { ...c, name: formData.name, image: formData.image }
-          : c
-      ));
-    } else {
-      // Add new
-      const newCategory = {
-        id: Date.now().toString(),
-        name: formData.name,
-        slug: formData.name.toLowerCase().replace(/\s+/g, '-'),
-        image: formData.image || 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=100',
-        subcategories: 0,
-      };
-      setCategories([...categories, newCategory]);
+    try {
+      const slug = formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      
+      if (editingCategory) {
+        // Update existing
+        const response = await fetch(`/api/categories/${editingCategory.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            slug,
+            image: formData.image || null,
+          }),
+        });
+        
+        if (response.ok) {
+          const updatedCategory = await response.json();
+          setCategories(categories.map((c) => 
+            c.id === editingCategory.id ? updatedCategory : c
+          ));
+        }
+      } else {
+        // Add new
+        const response = await fetch('/api/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            slug,
+            image: formData.image || null,
+          }),
+        });
+        
+        if (response.ok) {
+          const newCategory = await response.json();
+          setCategories([newCategory, ...categories]);
+        }
+      }
+      
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error saving category:', error);
     }
-    
-    handleCloseModal();
   };
 
-  const handleDelete = (id: string) => {
-    setCategories(categories.filter((c) => c.id !== id));
-    setDeleteModal({ show: false, categoryId: null });
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/categories/${id}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        setCategories(categories.filter((c) => c.id !== id));
+        setDeleteModal({ show: false, categoryId: null });
+      } else {
+        console.error('Failed to delete category');
+      }
+    } catch (error) {
+      console.error('Error deleting category:', error);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -90,55 +153,61 @@ export default function AdminCategoriesPage() {
 
       {/* Categories Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {categories.map((category) => (
-          <motion.div
-            key={category.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
-          >
-            {/* Category Image */}
-            <div className="aspect-video bg-gray-100 relative">
-              {category.image ? (
-                <img
-                  src={category.image}
-                  alt={category.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <ImageIcon className="w-8 h-8 text-gray-400" />
-                </div>
-              )}
-            </div>
-
-            {/* Category Info */}
-            <div className="p-4">
-              <h3 className="font-semibold text-gray-900">{category.name}</h3>
-              <p className="text-sm text-gray-500 mt-1">
-                {category.subcategories} subcategories
-              </p>
-              
-              {/* Actions */}
-              <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
-                <button
-                  onClick={() => handleOpenModal(category)}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <Edit2 className="w-4 h-4" />
-                  Edit
-                </button>
-                <button
-                  onClick={() => setDeleteModal({ show: true, categoryId: category.id })}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete
-                </button>
+        {categories.length > 0 ? (
+          categories.map((category) => (
+            <motion.div
+              key={category.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+            >
+              {/* Category Image */}
+              <div className="aspect-video bg-gray-100 relative">
+                {category.image ? (
+                  <img
+                    src={category.image}
+                    alt={category.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <ImageIcon className="w-8 h-8 text-gray-400" />
+                  </div>
+                )}
               </div>
-            </div>
-          </motion.div>
-        ))}
+
+              {/* Category Info */}
+              <div className="p-4">
+                <h3 className="font-semibold text-gray-900">{category.name}</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  {category.subcategories?.length || 0} subcategories
+                </p>
+                
+                {/* Actions */}
+                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                  <button
+                    onClick={() => handleOpenModal(category)}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => setDeleteModal({ show: true, categoryId: category.id })}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))
+        ) : (
+          <div className="col-span-full text-center py-12 text-gray-500">
+            No categories yet. Add your first category to get started!
+          </div>
+        )}
       </div>
 
       {/* Add/Edit Modal */}

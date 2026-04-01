@@ -1,28 +1,99 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronLeft, Minus, Plus, MessageCircle, Star } from 'lucide-react';
-import { getProductBySlug, getRelatedProducts, testimonials } from '@/lib/products';
 import { useCartStore } from '@/lib/store';
 import { formatPrice, convertToGHS } from '@/lib/utils';
 import Button from '@/components/ui/Button';
 import ProductCard from '@/components/product/ProductCard';
 
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  shortDescription?: string;
+  price: number;
+  originalPrice?: number;
+  images: string[];
+  inStock: boolean;
+  stockQuantity: number;
+  featured: boolean;
+  newArrival: boolean;
+  bestSeller: boolean;
+  onSale: boolean;
+  rating?: number;
+  reviewCount?: number;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  subcategory?: {
+    id: string;
+    name: string;
+  };
+}
+
 export default function ProductPage() {
   const params = useParams();
   const slug = params?.slug as string;
-  const product = getProductBySlug(slug);
-  const relatedProducts = getRelatedProducts(product?.id || '');
   
+  const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   
   const addItem = useCartStore((state) => state.addItem);
   const openCart = useCartStore((state) => state.openCart);
+
+  useEffect(() => {
+    fetchProduct();
+  }, [slug]);
+
+  const fetchProduct = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch all products to find by slug
+      const productsRes = await fetch('/api/products');
+      const products = await productsRes.json();
+      
+      const foundProduct = products.find((p: Product) => p.slug === slug);
+      setProduct(foundProduct || null);
+      
+      // Fetch related products (same category)
+      if (foundProduct) {
+        const relatedRes = await fetch(`/api/products?categoryId=${foundProduct.category.id}&limit=4`);
+        const related = await relatedRes.json();
+        setRelatedProducts(related.filter((p: Product) => p.id !== foundProduct.id).slice(0, 4));
+      }
+    } catch (error) {
+      console.error('Error fetching product:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddToCart = () => {
+    if (product) {
+      addItem(product, quantity);
+      openCart();
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-20 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -36,11 +107,6 @@ export default function ProductPage() {
       </div>
     );
   }
-
-  const handleAddToCart = () => {
-    addItem(product, quantity);
-    openCart();
-  };
 
   return (
     <div className="min-h-screen pt-20">
@@ -67,17 +133,23 @@ export default function ProductPage() {
           >
             {/* Main Image */}
             <div className="relative aspect-square bg-secondary mb-4 overflow-hidden">
-              <Image
-                src={product.images[selectedImage]}
-                alt={product.name}
-                fill
-                className="object-cover hover:scale-105 transition-transform duration-500"
-                priority
-              />
+              {product.images && product.images.length > 0 ? (
+                <Image
+                  src={product.images[selectedImage]}
+                  alt={product.name}
+                  fill
+                  className="object-cover hover:scale-105 transition-transform duration-500"
+                  priority
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  No image available
+                </div>
+              )}
             </div>
             
             {/* Thumbnail Gallery */}
-            {product.images.length > 1 && (
+            {product.images && product.images.length > 1 && (
               <div className="flex gap-4">
                 {product.images.map((image, index) => (
                   <button
@@ -105,7 +177,7 @@ export default function ProductPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <p className="text-accent text-sm font-medium mb-2">{product.category}</p>
+            <p className="text-accent text-sm font-medium mb-2">{product.category.name}</p>
             <h1 className="text-section font-heading text-text mb-4">
               {product.name}
             </h1>
@@ -204,74 +276,6 @@ export default function ProductPage() {
               )}
             </div>
           </motion.div>
-        </div>
-
-        {/* Reviews Section */}
-        <div className="mt-20">
-          <h2 className="text-section font-heading text-text mb-8">
-            Customer Reviews
-          </h2>
-          
-          {/* Overall Rating */}
-          <div className="bg-primary p-6 mb-8">
-            <div className="flex items-center gap-4">
-              <div className="text-4xl font-bold text-text">4.8</div>
-              <div>
-                <div className="flex gap-1 mb-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-5 h-5 ${
-                        i < 4
-                          ? 'fill-yellow-400 text-yellow-400'
-                          : 'text-gray-300'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <p className="text-text/60 text-sm">Based on {testimonials.length} reviews</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Reviews List */}
-          <div className="space-y-6">
-            {testimonials.map((review, index) => (
-              <motion.div
-                key={review.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
-                className="bg-primary p-8"
-              >
-                {/* Star Rating */}
-                <div className="flex gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-4 h-4 ${
-                        i < review.rating
-                          ? 'fill-yellow-400 text-yellow-400'
-                          : 'text-gray-300'
-                      }`}
-                    />
-                  ))}
-                </div>
-
-                {/* Review Text */}
-                <p className="text-text/70 leading-relaxed mb-4">
-                  &ldquo;{review.comment}&rdquo;
-                </p>
-
-                {/* Customer Info */}
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-text">{review.name}</h4>
-                  <span className="text-text/40 text-sm">{review.date}</span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
         </div>
 
         {/* Related Products */}
