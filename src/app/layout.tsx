@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import MiniCart from "@/components/cart/MiniCart";
-import WhatsAppButton from "@/components/ui/WhatsAppButton";
+import ConditionalHeader from "@/components/layout/ConditionalHeader";
+import ConditionalFooter from "@/components/layout/ConditionalFooter";
+import ConditionalMiniCart from "@/components/cart/ConditionalMiniCart";
+import ConditionalWhatsAppButton from "@/components/ui/ConditionalWhatsAppButton";
 
 export const metadata: Metadata = {
   title: "Cynkare | Premium Skincare & Beauty",
@@ -27,11 +27,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <Header />
+        <ConditionalHeader />
         <main>{children}</main>
-        <Footer />
-        <MiniCart />
-        <WhatsAppButton />
+        <ConditionalFooter />
+        <ConditionalMiniCart />
+        <ConditionalWhatsAppButton />
       </body>
     </html>
   );
