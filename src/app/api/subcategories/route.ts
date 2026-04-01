@@ -48,15 +48,16 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(subcategory, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating subcategory:', error);
-    if (error.code === 'P2002') {
+    const prismaError = error as { code?: string };
+    if (prismaError.code === 'P2002') {
       return NextResponse.json(
         { error: 'Subcategory with this name already exists in this category' },
         { status: 400 }
       );
     }
-    if (error.code === 'P2003') {
+    if (prismaError.code === 'P2003') {
       return NextResponse.json(
         { error: 'Category not found' },
         { status: 404 }

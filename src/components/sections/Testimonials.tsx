@@ -1,10 +1,58 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
-import { testimonials } from '@/lib/products';
+
+interface Testimonial {
+  id: string;
+  name: string;
+  rating: number;
+  comment: string;
+}
 
 export default function Testimonials() {
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTestimonials();
+  }, []);
+
+  const fetchTestimonials = async () => {
+    try {
+      const response = await fetch('/api/testimonials');
+      if (response.ok) {
+        const data = await response.json();
+        setTestimonials(data);
+      }
+    } catch (error) {
+      console.error('Error fetching testimonials:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <section className="py-20 bg-primary">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-section font-heading text-text mb-4">
+              What Our Customers Say
+            </h2>
+            <p className="text-body text-text/60 max-w-2xl mx-auto">
+              Join thousands of satisfied customers who have transformed their skincare
+            </p>
+          </div>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-20 bg-primary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

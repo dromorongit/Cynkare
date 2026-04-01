@@ -96,15 +96,15 @@ export async function PUT(
     });
 
     return NextResponse.json(product);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating product:', error);
-    if (error.code === 'P2002') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
       return NextResponse.json(
         { error: 'Product with this slug already exists' },
         { status: 400 }
       );
     }
-    if (error.code === 'P2025') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
@@ -128,9 +128,9 @@ export async function DELETE(
     });
 
     return NextResponse.json({ message: 'Product deleted successfully' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting product:', error);
-    if (error.code === 'P2025') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }

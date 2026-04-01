@@ -61,15 +61,15 @@ export async function PUT(
     });
 
     return NextResponse.json(subcategory);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating subcategory:', error);
-    if (error.code === 'P2002') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
       return NextResponse.json(
         { error: 'Subcategory with this name already exists in this category' },
         { status: 400 }
       );
     }
-    if (error.code === 'P2025') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
       return NextResponse.json(
         { error: 'Subcategory not found' },
         { status: 404 }
@@ -93,9 +93,9 @@ export async function DELETE(
     });
 
     return NextResponse.json({ message: 'Subcategory deleted successfully' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting subcategory:', error);
-    if (error.code === 'P2025') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
       return NextResponse.json(
         { error: 'Subcategory not found' },
         { status: 404 }

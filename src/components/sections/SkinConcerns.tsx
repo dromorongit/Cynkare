@@ -4,21 +4,39 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { skinConcerns, getProductsByConcern } from '@/lib/products';
 import { Product } from '@/types';
 import ProductCard from '@/components/product/ProductCard';
+
+const skinConcerns = [
+  { id: 'acne', name: 'Acne', slug: 'acne' },
+  { id: 'stretch-marks', name: 'Stretch Marks', slug: 'stretch-marks' },
+  { id: 'white-patches', name: 'White Patches', slug: 'white-patches' },
+  { id: 'redness', name: 'Redness', slug: 'redness' },
+];
 
 export default function SkinConcerns() {
   const [activeConcern, setActiveConcern] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleConcernClick = (slug: string) => {
+  const handleConcernClick = async (slug: string) => {
     if (activeConcern === slug) {
       setActiveConcern(null);
       setProducts([]);
     } else {
       setActiveConcern(slug);
-      setProducts(getProductsByConcern(slug));
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/products?concern=${slug}`);
+        if (response.ok) {
+          const data = await response.json();
+          setProducts(data);
+        }
+      } catch (error) {
+        console.error('Error fetching products by concern:', error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -78,7 +96,7 @@ export default function SkinConcerns() {
         </div>
 
         {/* Products for Selected Concern */}
-        {activeConcern && products.length > 0 && (
+        {activeConcern && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -96,24 +114,24 @@ export default function SkinConcerns() {
                 View All →
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {products.map((product, index) => (
-                <ProductCard key={product.id} product={product} index={index} />
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {/* Show message if no products found for a concern */}
-        {activeConcern && products.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-8"
-          >
-            <p className="text-text/60">
-              No products found for this concern yet. Check back soon!
-            </p>
+            
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+              </div>
+            ) : products.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {products.map((product, index) => (
+                  <ProductCard key={product.id} product={product} index={index} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-text/60">
+                  No products found for this concern yet. Check back soon!
+                </p>
+              </div>
+            )}
           </motion.div>
         )}
       </div>

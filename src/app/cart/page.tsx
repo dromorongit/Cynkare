@@ -74,7 +74,7 @@ export default function CartPage() {
                         {item.product.name}
                       </h3>
                     </Link>
-                    <p className="text-sm text-text/60 mb-2">{item.product.category}</p>
+                    <p className="text-sm text-text/60 mb-2">{item.product.category.name}</p>
                     <p className="font-medium">{formatPrice(convertToGHS(item.product.price))}</p>
                   </div>
 

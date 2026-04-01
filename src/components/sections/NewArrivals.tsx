@@ -25,10 +25,12 @@ interface Product {
   category: {
     id: string;
     name: string;
+    slug: string;
   };
   subcategory?: {
     id: string;
     name: string;
+    slug: string;
   };
 }
 

@@ -33,6 +33,7 @@ interface Product {
   subcategory?: {
     id: string;
     name: string;
+    slug: string;
   };
 }
 

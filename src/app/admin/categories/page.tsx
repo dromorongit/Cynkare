@@ -9,7 +9,7 @@ interface Category {
   name: string;
   slug: string;
   image?: string;
-  subcategories: any[];
+  subcategories: { id: string; name: string; slug: string }[];
   _count?: {
     products: number;
   };

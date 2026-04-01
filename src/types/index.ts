@@ -25,6 +25,7 @@ export interface Product {
   onSale?: boolean;
   rating?: number;
   reviewCount?: number;
+  concerns?: string[];
 }
 
 export interface Subcategory {

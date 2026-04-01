@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChevronLeft, Minus, Plus, MessageCircle, Star } from 'lucide-react';
+import { ChevronLeft, Minus, Plus, MessageCircle } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import { formatPrice, convertToGHS } from '@/lib/utils';
 import Button from '@/components/ui/Button';
@@ -36,6 +36,7 @@ interface Product {
   subcategory?: {
     id: string;
     name: string;
+    slug: string;
   };
 }
 

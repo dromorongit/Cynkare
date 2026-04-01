@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const subcategoryId = searchParams.get('subcategoryId');
     const limit = searchParams.get('limit');
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (featured === 'true') where.featured = true;
     if (newArrival === 'true') where.newArrival = true;
@@ -100,15 +100,15 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(product, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating product:', error);
-    if (error.code === 'P2002') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
       return NextResponse.json(
         { error: 'Product with this slug already exists' },
         { status: 400 }
       );
     }
-    if (error.code === 'P2003') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2003') {
       return NextResponse.json(
         { error: 'Category or subcategory not found' },
         { status: 404 }

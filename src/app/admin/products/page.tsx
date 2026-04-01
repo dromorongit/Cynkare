@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Search, Plus, Edit2, Trash2, Filter, X } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Filter, X, Package } from 'lucide-react';
 
 interface Product {
   id: string;

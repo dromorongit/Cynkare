@@ -83,7 +83,7 @@ export default function MiniCart() {
                           {item.product.name}
                         </h3>
                         <p className="text-sm text-text/60 mb-2">
-                          {item.product.category}
+                          {item.product.category.name}
                         </p>
                         <div className="flex items-center justify-between">
                           {/* Quantity Controls */}
