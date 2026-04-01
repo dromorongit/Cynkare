@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -9,6 +9,9 @@ import { ChevronLeft, Lock } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import { formatPrice, convertToGHS } from '@/lib/utils';
 import { generatePaymentReference } from '@/lib/paystack';
+
+// Force dynamic rendering to avoid SSR issues
+export const dynamic = 'force-dynamic';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -23,6 +26,11 @@ export default function CheckoutPage() {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -93,6 +101,18 @@ export default function CheckoutPage() {
       },
     });
   };
+
+  // Show loading state during SSR
+  if (!isClient) {
+    return (
+      <div className="min-h-screen pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
+          <p className="text-text/60">Loading checkout...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
