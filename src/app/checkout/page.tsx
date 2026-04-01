@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { ChevronLeft, Lock } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import { formatPrice, convertToGHS } from '@/lib/utils';
-import { generatePaymentReference } from '@/lib/paystack';
+import { generatePaymentReference, paystackConfig } from '@/lib/paystack';
 
 // Force dynamic rendering to avoid SSR issues
 export const dynamic = 'force-dynamic';
@@ -69,7 +69,7 @@ export default function CheckoutPage() {
     const paystack = new PaystackPop();
     
     paystack.newTransaction({
-      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+      key: paystackConfig.publicKey,
       email: formData.email || 'customer@cynkare.com',
       amount: totalAmount * 100, // Convert to kobo
       reference,
