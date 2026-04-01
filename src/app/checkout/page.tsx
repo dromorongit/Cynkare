@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { ChevronLeft, Lock } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import { formatPrice, convertToGHS } from '@/lib/utils';
-import { initializePaystackPayment, generatePaymentReference } from '@/lib/paystack';
+import { generatePaymentReference } from '@/lib/paystack';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -54,15 +54,21 @@ export default function CheckoutPage() {
     // Calculate total amount in GHS
     const totalAmount = convertToGHS(subtotal);
 
+    // Dynamically import Paystack to avoid SSR issues
+    const { default: PaystackPop } = await import('@paystack/inline-js');
+    
     // Initialize Paystack payment
-    initializePaystackPayment({
+    const paystack = new PaystackPop();
+    
+    paystack.newTransaction({
+      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
       email: formData.email || 'customer@cynkare.com',
-      amount: totalAmount,
+      amount: totalAmount * 100, // Convert to kobo
       reference,
-      onSuccess: (paymentReference: string) => {
+      onSuccess: (transaction: { reference: string }) => {
         // Prepare order details for success page
         const orderDetails = {
-          reference: paymentReference,
+          reference: transaction.reference,
           items: items.map(item => ({
             name: item.product.name,
             quantity: item.quantity,
