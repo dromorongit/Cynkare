@@ -1,10 +1,12 @@
 export function formatPrice(price: number): string {
-  return `GH₵${price.toFixed(2)}`;
+  return `₵${price.toFixed(2)}`;
 }
 
-// Exchange rate: 1 USD = 12.5 GHS (approximate)
-export const exchangeRate = 12.5;
+// Exchange rate is no longer needed - prices are entered directly in Ghana Cedis
+// Keeping for backwards compatibility but not used
+export const exchangeRate = 1;
 
-export function convertToGHS(usdPrice: number): number {
-  return usdPrice * exchangeRate;
+export function convertToGHS(ghsPrice: number): number {
+  // No conversion needed - prices are entered directly in GHS
+  return ghsPrice;
 }

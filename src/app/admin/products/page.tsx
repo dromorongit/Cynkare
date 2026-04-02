@@ -217,10 +217,10 @@ export default function AdminProductsPage() {
                     <td className="px-6 py-4 text-sm text-gray-600">{product.category.name}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900">${product.price.toFixed(2)}</span>
+                        <span className="font-medium text-gray-900">₵{product.price.toFixed(2)}</span>
                         {product.originalPrice && (
                           <span className="text-sm text-gray-400 line-through">
-                            ${product.originalPrice.toFixed(2)}
+                            ₵{product.originalPrice.toFixed(2)}
                           </span>
                         )}
                       </div>

@@ -184,10 +184,10 @@ export default function NewProductPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
-                    Price *
+                    Regular Price *
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₵</span>
                     <input
                       type="number"
                       id="price"
@@ -204,10 +204,10 @@ export default function NewProductPage() {
                 </div>
                 <div>
                   <label htmlFor="originalPrice" className="block text-sm font-medium text-gray-700 mb-2">
-                    Original Price
+                    Sales Price (Discounted price - leave empty if not on sale)
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₵</span>
                     <input
                       type="number"
                       id="originalPrice"

@@ -205,8 +205,8 @@ function ShopContent() {
                   className="w-full"
                 />
                 <div className="flex justify-between text-sm text-text/60">
-                  <span>${priceRange[0]}</span>
-                  <span>${priceRange[1]}</span>
+                  <span>₵{priceRange[0]}</span>
+                  <span>₵{priceRange[1]}</span>
                 </div>
               </div>
             </div>
