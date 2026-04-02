@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, Upload, X, Save, Image as ImageIcon } from 'lucide-react';
@@ -16,7 +16,6 @@ const categories = staticCategories.map((cat) => ({
 export default function NewProductPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [subcategories, setSubcategories] = useState<string[]>([]);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -36,20 +35,6 @@ export default function NewProductPage() {
   });
 
   const [imageInput, setImageInput] = useState('');
-
-  useEffect(() => {
-    fetchSubcategories();
-  }, []);
-
-  const fetchSubcategories = async () => {
-    try {
-      const res = await fetch('/api/subcategories');
-      const data = await res.json();
-      setSubcategories(data.map((s: { name: string }) => s.name));
-    } catch (error) {
-      console.error('Error fetching subcategories:', error);
-    }
-  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;

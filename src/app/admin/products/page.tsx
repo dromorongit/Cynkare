@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Search, Plus, Edit2, Trash2, Filter, X, Package } from 'lucide-react';
-import { staticCategories } from '@/lib/categories';
 
 interface Product {
   id: string;

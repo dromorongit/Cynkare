@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { SlidersHorizontal, X, ChevronRight } from 'lucide-react';
 import ProductCard from '@/components/product/ProductCard';
 import { SortOption } from '@/types';
-import { staticCategories, getCategoryBySlug } from '@/lib/categories';
+import { staticCategories } from '@/lib/categories';
 
 interface Product {
   id: string;
@@ -38,14 +38,6 @@ interface Product {
   };
 }
 
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  image?: string;
-  subcategories: { id: string; name: string; slug: string }[];
-}
-
 function CategoryContent() {
   const searchParams = useSearchParams();
   const categorySlug = searchParams.get('category');
@@ -53,13 +45,13 @@ function CategoryContent() {
   
   const [category, setCategory] = useState<{ id: string; name: string; slug: string; subcategories: { id: string; name: string; slug: string }[] } | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
-  const [subcategories, setSubcategories] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>(subcategoryParam || 'all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200]);
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [showFilters, setShowFilters] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchData();
   }, [categorySlug]);
@@ -70,8 +62,6 @@ function CategoryContent() {
       
       const foundCategory = staticCategories.find((c) => c.slug === categorySlug);
       if (foundCategory) {
-        setCategory({ ...foundCategory, subcategories: [] });
-        
         const productsRes = await fetch(`/api/products?categoryId=${foundCategory.id}`);
         const productsData = await productsRes.json();
         setProducts(productsData);
@@ -81,7 +71,7 @@ function CategoryContent() {
         const categorySubcategories = allSubcategories
           .filter((s: { category: { id: string } }) => s.category.id === foundCategory.id)
           .map((s: { id: string; name: string; slug: string }) => ({ id: s.id, name: s.name, slug: s.slug }));
-        setSubcategories(categorySubcategories);
+        
         setCategory({ ...foundCategory, subcategories: categorySubcategories });
       } else {
         setCategory(null);
