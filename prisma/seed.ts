@@ -15,21 +15,15 @@ async function main() {
 
   for (const category of staticCategories) {
     try {
-      const existing = await prisma.category.findUnique({
+      await prisma.category.upsert({
         where: { slug: category.slug },
+        update: {},
+        create: {
+          name: category.name,
+          slug: category.slug,
+        },
       });
-      
-      if (!existing) {
-        await prisma.category.create({
-          data: {
-            name: category.name,
-            slug: category.slug,
-          },
-        });
-        console.log(`Created category: ${category.name}`);
-      } else {
-        console.log(`Category already exists: ${category.name}`);
-      }
+      console.log(`Created category: ${category.name}`);
     } catch (error) {
       console.error(`Error processing category ${category.name}:`, error);
     }
