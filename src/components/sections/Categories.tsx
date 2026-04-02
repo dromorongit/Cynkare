@@ -1,57 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
-
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  image?: string;
-  subcategories: { id: string; name: string; slug: string }[];
-}
+import { staticCategories } from '@/lib/categories';
 
 export default function Categories() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('/api/categories');
-      const data = await response.json();
-      setCategories(data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <section className="py-20 bg-primary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-section font-heading text-text mb-4">
-              Shop by Category
-            </h2>
-            <p className="text-body text-text/60 max-w-2xl mx-auto">
-              Explore our curated collection of premium skincare and beauty products
-            </p>
-          </div>
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  const categories = staticCategories;
 
   return (
     <section className="py-20 bg-primary">

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { SlidersHorizontal, X, ChevronRight } from 'lucide-react';
 import ProductCard from '@/components/product/ProductCard';
 import { SortOption } from '@/types';
+import { staticCategories, getCategoryBySlug } from '@/lib/categories';
 
 interface Product {
   id: string;
@@ -50,8 +51,9 @@ function CategoryContent() {
   const categorySlug = searchParams.get('category');
   const subcategoryParam = searchParams.get('subcategory');
   
-  const [category, setCategory] = useState<Category | null>(null);
+  const [category, setCategory] = useState<{ id: string; name: string; slug: string; subcategories: { id: string; name: string; slug: string }[] } | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [subcategories, setSubcategories] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>(subcategoryParam || 'all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200]);
@@ -66,18 +68,23 @@ function CategoryContent() {
     try {
       setLoading(true);
       
-      // Fetch categories
-      const categoriesRes = await fetch('/api/categories');
-      const categories = await categoriesRes.json();
-      
-      const foundCategory = categories.find((c: Category) => c.slug === categorySlug);
-      setCategory(foundCategory || null);
-      
-      // Fetch products for this category
+      const foundCategory = staticCategories.find((c) => c.slug === categorySlug);
       if (foundCategory) {
+        setCategory({ ...foundCategory, subcategories: [] });
+        
         const productsRes = await fetch(`/api/products?categoryId=${foundCategory.id}`);
         const productsData = await productsRes.json();
         setProducts(productsData);
+        
+        const subcategoriesRes = await fetch('/api/subcategories');
+        const allSubcategories = await subcategoriesRes.json();
+        const categorySubcategories = allSubcategories
+          .filter((s: { category: { id: string } }) => s.category.id === foundCategory.id)
+          .map((s: { id: string; name: string; slug: string }) => ({ id: s.id, name: s.name, slug: s.slug }));
+        setSubcategories(categorySubcategories);
+        setCategory({ ...foundCategory, subcategories: categorySubcategories });
+      } else {
+        setCategory(null);
       }
     } catch (error) {
       console.error('Error fetching data:', error);

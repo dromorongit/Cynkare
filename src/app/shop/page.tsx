@@ -7,6 +7,7 @@ import { SlidersHorizontal, X } from 'lucide-react';
 import ProductCard from '@/components/product/ProductCard';
 import Link from 'next/link';
 import { SortOption } from '@/types';
+import { staticCategories } from '@/lib/categories';
 
 interface Product {
   id: string;
@@ -37,18 +38,11 @@ interface Product {
   };
 }
 
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-}
-
 function ShopContent() {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get('category');
   
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>(categoryParam || 'all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200]);
@@ -63,15 +57,9 @@ function ShopContent() {
     try {
       setLoading(true);
       
-      // Fetch products
       const productsRes = await fetch('/api/products');
       const productsData = await productsRes.json();
       setProducts(productsData);
-      
-      // Fetch categories
-      const categoriesRes = await fetch('/api/categories');
-      const categoriesData = await categoriesRes.json();
-      setCategories(categoriesData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -177,7 +165,7 @@ function ShopContent() {
                 >
                   All Products
                 </button>
-                {categories.map((category) => (
+                {staticCategories.map((category) => (
                   <Link
                     key={category.id}
                     href={`/category/${category.slug}`}

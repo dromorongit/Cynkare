@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Edit2, Trash2, FolderTree, X } from 'lucide-react';
+import { staticCategories } from '@/lib/categories';
 
 interface Subcategory {
   id: string;
@@ -17,14 +18,8 @@ interface Subcategory {
   };
 }
 
-interface Category {
-  id: string;
-  name: string;
-}
-
 export default function AdminSubcategoriesPage() {
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingSubcategory, setEditingSubcategory] = useState<Subcategory | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; subcategoryId: string | null }>({ show: false, subcategoryId: null });
@@ -43,15 +38,9 @@ export default function AdminSubcategoriesPage() {
     try {
       setLoading(true);
       
-      // Fetch subcategories
       const subcategoriesRes = await fetch('/api/subcategories');
       const subcategoriesData = await subcategoriesRes.json();
       setSubcategories(subcategoriesData);
-      
-      // Fetch categories
-      const categoriesRes = await fetch('/api/categories');
-      const categoriesData = await categoriesRes.json();
-      setCategories(categoriesData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -83,7 +72,6 @@ export default function AdminSubcategoriesPage() {
       const slug = formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
       
       if (editingSubcategory) {
-        // Update existing
         const response = await fetch(`/api/subcategories/${editingSubcategory.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -101,7 +89,6 @@ export default function AdminSubcategoriesPage() {
           ));
         }
       } else {
-        // Add new
         const response = await fetch('/api/subcategories', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -141,8 +128,7 @@ export default function AdminSubcategoriesPage() {
     }
   };
 
-  // Group subcategories by category
-  const groupedSubcategories = categories.map((category) => ({
+  const groupedSubcategories = staticCategories.map((category) => ({
     category,
     subcategories: subcategories.filter((s) => s.category.id === category.id),
   })).filter((group) => group.subcategories.length > 0);
@@ -272,7 +258,7 @@ export default function AdminSubcategoriesPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                 >
                   <option value="">Select category</option>
-                  {categories.map((cat) => (
+                  {staticCategories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
                     </option>

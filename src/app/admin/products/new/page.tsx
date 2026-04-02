@@ -1,22 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, Upload, X, Save, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
+import { staticCategories } from '@/lib/categories';
 
-const categories = [
-  { id: '1', name: 'Body Lotions', subcategories: ['Whitening Lotions', 'Moisturizing Lotions', 'Body Butters'] },
-  { id: '2', name: 'Bath Soaps', subcategories: ['African Black Soap', 'Whitening Soaps', 'Organic Soaps'] },
-  { id: '3', name: 'Face Creams & Cleansers', subcategories: ['Face Creams', 'Face Cleansers', 'Serums', 'Face Masks'] },
-  { id: '4', name: 'Perfumes', subcategories: ['Men Perfumes', 'Women Perfumes', 'Deodorants', 'Body Mists', 'Perfume Oils'] },
-  { id: '5', name: 'Hair & Accessories', subcategories: ['Wig Caps', 'Lace Closures', 'Lace Frontals', 'Hair Care', 'Accessories'] },
-];
+const categories = staticCategories.map((cat) => ({
+  id: cat.id,
+  name: cat.name,
+  subcategories: [] as string[],
+}));
 
 export default function NewProductPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [subcategories, setSubcategories] = useState<string[]>([]);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -36,6 +36,20 @@ export default function NewProductPage() {
   });
 
   const [imageInput, setImageInput] = useState('');
+
+  useEffect(() => {
+    fetchSubcategories();
+  }, []);
+
+  const fetchSubcategories = async () => {
+    try {
+      const res = await fetch('/api/subcategories');
+      const data = await res.json();
+      setSubcategories(data.map((s: { name: string }) => s.name));
+    } catch (error) {
+      console.error('Error fetching subcategories:', error);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -68,11 +82,57 @@ export default function NewProductPage() {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const slug = formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      
+      // Get category ID
+      const selectedCat = categories.find((c) => c.name === formData.category);
+      
+      // Find subcategory ID if selected
+      let subcategoryId = null;
+      if (formData.subcategory) {
+        const subRes = await fetch('/api/subcategories');
+        const allSubcategories = await subRes.json();
+        const foundSub = allSubcategories.find((s: { name: string; category: { id: string } }) => 
+          s.name === formData.subcategory && s.category.id === selectedCat?.id
+        );
+        if (foundSub) {
+          subcategoryId = foundSub.id;
+        }
+      }
+
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          slug,
+          description: formData.description,
+          price: parseFloat(formData.price),
+          originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : null,
+          images: formData.images,
+          stockQuantity: parseInt(formData.stockQuantity),
+          sku: formData.sku || null,
+          categoryId: selectedCat?.id,
+          subcategoryId,
+          newArrival: formData.newArrival,
+          bestSeller: formData.bestSeller,
+          featured: formData.featured,
+          onSale: formData.onSale,
+        }),
+      });
+
+      if (response.ok) {
+        router.push('/admin/products');
+      } else {
+        alert('Failed to create product');
+      }
+    } catch (error) {
+      console.error('Error creating product:', error);
+      alert('Error creating product');
+    } finally {
       setLoading(false);
-      router.push('/admin/products');
-    }, 1000);
+    }
   };
 
   const selectedCategory = categories.find((c) => c.name === formData.category);

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Search, Plus, Edit2, Trash2, Filter, X, Package } from 'lucide-react';
+import { staticCategories } from '@/lib/categories';
 
 interface Product {
   id: string;
@@ -27,14 +28,8 @@ interface Product {
   images: string[];
 }
 
-interface Category {
-  id: string;
-  name: string;
-}
-
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showFilters, setShowFilters] = useState(false);
@@ -49,15 +44,9 @@ export default function AdminProductsPage() {
     try {
       setLoading(true);
       
-      // Fetch products
       const productsRes = await fetch('/api/products');
       const productsData = await productsRes.json();
       setProducts(productsData);
-      
-      // Fetch categories
-      const categoriesRes = await fetch('/api/categories');
-      const categoriesData = await categoriesRes.json();
-      setCategories(categoriesData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
