@@ -58,10 +58,17 @@ function ShopContent() {
       setLoading(true);
       
       const productsRes = await fetch('/api/products');
-      const productsData = await productsRes.json();
-      setProducts(productsData);
+      if (!productsRes.ok) {
+        // Handle error gracefully by setting empty array
+        console.error('Failed to fetch products:', productsRes.status);
+        setProducts([]);
+      } else {
+        const productsData = await productsRes.json();
+        setProducts(productsData);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
+      setProducts([]);
     } finally {
       setLoading(false);
     }

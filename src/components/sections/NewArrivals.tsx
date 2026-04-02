@@ -46,10 +46,16 @@ export default function NewArrivals() {
   const fetchNewArrivals = async () => {
     try {
       const response = await fetch('/api/products?newArrival=true');
-      const data = await response.json();
-      setNewProducts(data);
+      if (!response.ok) {
+        console.error('Failed to fetch new arrivals:', response.status);
+        setNewProducts([]);
+      } else {
+        const data = await response.json();
+        setNewProducts(data);
+      }
     } catch (error) {
       console.error('Error fetching new arrivals:', error);
+      setNewProducts([]);
     } finally {
       setLoading(false);
     }

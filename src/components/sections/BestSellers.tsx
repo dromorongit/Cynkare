@@ -46,10 +46,16 @@ export default function BestSellers() {
   const fetchBestSellers = async () => {
     try {
       const response = await fetch('/api/products?bestSeller=true');
-      const data = await response.json();
-      setBestSellers(data);
+      if (!response.ok) {
+        console.error('Failed to fetch best sellers:', response.status);
+        setBestSellers([]);
+      } else {
+        const data = await response.json();
+        setBestSellers(data);
+      }
     } catch (error) {
       console.error('Error fetching best sellers:', error);
+      setBestSellers([]);
     } finally {
       setLoading(false);
     }
