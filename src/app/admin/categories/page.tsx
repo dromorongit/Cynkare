@@ -26,10 +26,17 @@ export default function AdminCategoriesPage() {
     try {
       setLoading(true);
       const response = await fetch('/api/subcategories');
-      const data = await response.json();
-      setSubcategories(data);
+      if (!response.ok) {
+        console.error('Failed to fetch subcategories:', response.status);
+        setSubcategories([]);
+      } else {
+        const data = await response.json();
+        // Ensure data is an array
+        setSubcategories(Array.isArray(data) ? data : []);
+      }
     } catch (error) {
       console.error('Error fetching subcategories:', error);
+      setSubcategories([]);
     } finally {
       setLoading(false);
     }

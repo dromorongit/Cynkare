@@ -16,10 +16,8 @@ export async function GET() {
     return NextResponse.json(subcategories);
   } catch (error) {
     console.error('Error fetching subcategories:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch subcategories' },
-      { status: 500 }
-    );
+    // Return empty array instead of 500 to prevent client crashes
+    return NextResponse.json([]);
   }
 }
 
