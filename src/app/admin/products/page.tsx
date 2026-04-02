@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Search, Plus, Edit2, Trash2, Filter, X, Package } from 'lucide-react';
+import { staticCategories } from '@/lib/categories';
 
 interface Product {
   id: string;
@@ -34,6 +35,8 @@ export default function AdminProductsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; productId: string | null }>({ show: false, productId: null });
   const [loading, setLoading] = useState(true);
+
+  const categories = staticCategories;
 
   useEffect(() => {
     fetchData();
