@@ -9,6 +9,9 @@ interface Subcategory {
   id: string;
   name: string;
   slug: string;
+  category: {
+    id: string;
+  };
 }
 
 export default function AdminCategoriesPage() {
@@ -33,7 +36,7 @@ export default function AdminCategoriesPage() {
   };
 
   const getSubcategoriesByCategoryId = (categoryId: string) => {
-    return subcategories.filter((s: Subcategory & { category: { id: string } }) => s.category.id === categoryId);
+    return subcategories.filter((s) => s.category?.id === categoryId);
   };
 
   if (loading) {
