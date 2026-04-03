@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, Upload, X, Save, Image as ImageIcon, Plus } from 'lucide-react';
@@ -48,6 +48,11 @@ export default function NewProductPage() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+
+    // Reset subcategory when category changes
+    if (name === 'category') {
+      setFormData((prev) => ({ ...prev, subcategory: '' }));
+    }
   };
 
   // Handle main image file upload
@@ -220,6 +225,38 @@ export default function NewProductPage() {
 
   const selectedCategory = categories.find((c) => c.name === formData.category);
 
+  // Fetch subcategories when category is selected
+  const [availableSubcategories, setAvailableSubcategories] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    const fetchSubcategories = async () => {
+      if (!formData.category) {
+        setAvailableSubcategories([]);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/subcategories');
+        const allSubcategories = await response.json();
+        
+        // Find the category ID from static categories
+        const selectedCat = categories.find((c) => c.name === formData.category);
+        
+        if (selectedCat) {
+          // Filter subcategories by category ID
+          const filtered = allSubcategories.filter(
+            (sub: { category: { id: string } }) => sub.category.id === selectedCat.id
+          );
+          setAvailableSubcategories(filtered);
+        }
+      } catch (error) {
+        console.error('Error fetching subcategories:', error);
+      }
+    };
+
+    fetchSubcategories();
+  }, [formData.category]);
+
   return (
     <div>
       {/* Page Header */}
@@ -365,9 +402,9 @@ export default function NewProductPage() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="">Select subcategory</option>
-                    {selectedCategory?.subcategories.map((sub) => (
-                      <option key={sub} value={sub}>
-                        {sub}
+                    {availableSubcategories.map((sub) => (
+                      <option key={sub.id} value={sub.name}>
+                        {sub.name}
                       </option>
                     ))}
                   </select>
