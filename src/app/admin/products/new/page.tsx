@@ -40,6 +40,10 @@ export default function NewProductPage() {
     onSale: false,
   });
 
+  // State for local image previews (before upload)
+  const [mainImagePreviews, setMainImagePreviews] = useState<string[]>([]);
+  const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>([]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
@@ -59,6 +63,10 @@ export default function NewProductPage() {
   const handleMainImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+
+    // Create local previews immediately
+    const newPreviews = Array.from(files).map((file) => URL.createObjectURL(file));
+    setMainImagePreviews((prev) => [...prev, ...newPreviews]);
 
     setUploading(true);
     try {
@@ -95,6 +103,10 @@ export default function NewProductPage() {
   const handleAdditionalImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+
+    // Create local previews immediately
+    const newPreviews = Array.from(files).map((file) => URL.createObjectURL(file));
+    setAdditionalImagePreviews((prev) => [...prev, ...newPreviews]);
 
     setUploading(true);
     try {
@@ -153,15 +165,21 @@ export default function NewProductPage() {
 
   const handleRemoveImage = (index: number, type: 'main' | 'additional') => {
     if (type === 'main') {
-      setFormData((prev) => ({
-        ...prev,
-        images: prev.images.filter((_, i) => i !== index),
-      }));
+      const newImages = formData.images.filter((_, i) => i !== index);
+      setFormData((prev) => ({ ...prev, images: newImages }));
+      // Also remove preview if exists
+      if (index < mainImagePreviews.length) {
+        URL.revokeObjectURL(mainImagePreviews[index]);
+        setMainImagePreviews((prev) => prev.filter((_, i) => i !== index));
+      }
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        additionalImages: prev.additionalImages.filter((_, i) => i !== index),
-      }));
+      const newImages = formData.additionalImages.filter((_, i) => i !== index);
+      setFormData((prev) => ({ ...prev, additionalImages: newImages }));
+      // Also remove preview if exists
+      if (index < additionalImagePreviews.length) {
+        URL.revokeObjectURL(additionalImagePreviews[index]);
+        setAdditionalImagePreviews((prev) => prev.filter((_, i) => i !== index));
+      }
     }
   };
 
@@ -502,11 +520,12 @@ export default function NewProductPage() {
               </button>
             </div>
 
-            {/* Image Preview Grid */}
-            {formData.images.length > 0 && (
+            {/* Image Preview Grid - Shows both uploaded URLs and local previews */}
+            {(formData.images.length > 0 || mainImagePreviews.length > 0) && (
               <div className="grid grid-cols-4 gap-4">
+                {/* Show uploaded images */}
                 {formData.images.map((img, index) => (
-                  <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group">
+                  <div key={`uploaded-${index}`} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group">
                     <Image
                       src={img}
                       alt={`Product ${index + 1}`}
@@ -520,6 +539,20 @@ export default function NewProductPage() {
                     >
                       <X className="w-4 h-4" />
                     </button>
+                  </div>
+                ))}
+                {/* Show local previews while uploading */}
+                {mainImagePreviews.map((preview, index) => (
+                  <div key={`preview-${index}`} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group">
+                    <Image
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-white text-xs">Uploading...</span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -591,11 +624,12 @@ export default function NewProductPage() {
               </button>
             </div>
 
-            {/* Additional Image Preview Grid */}
-            {formData.additionalImages.length > 0 && (
+            {/* Additional Image Preview Grid - Shows both uploaded URLs and local previews */}
+            {(formData.additionalImages.length > 0 || additionalImagePreviews.length > 0) && (
               <div className="grid grid-cols-4 gap-4">
+                {/* Show uploaded images */}
                 {formData.additionalImages.map((img, index) => (
-                  <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group">
+                  <div key={`uploaded-${index}`} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group">
                     <Image
                       src={img}
                       alt={`Additional ${index + 1}`}
@@ -609,6 +643,20 @@ export default function NewProductPage() {
                     >
                       <X className="w-4 h-4" />
                     </button>
+                  </div>
+                ))}
+                {/* Show local previews while uploading */}
+                {additionalImagePreviews.map((preview, index) => (
+                  <div key={`preview-${index}`} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group">
+                    <Image
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-white text-xs">Uploading...</span>
+                    </div>
                   </div>
                 ))}
               </div>
