@@ -46,10 +46,19 @@ export default function AdminSubcategoriesPage() {
       const categoriesData = await categoriesRes.json();
       const subcategoriesData = await subcategoriesRes.json();
       
-      setCategories(categoriesData);
-      setSubcategories(subcategoriesData);
+      console.log('Categories fetched:', categoriesData);
+      console.log('Subcategories fetched:', subcategoriesData);
+      
+      // Ensure categories is always an array
+      const validCategories = Array.isArray(categoriesData) ? categoriesData : [];
+      const validSubcategories = Array.isArray(subcategoriesData) ? subcategoriesData : [];
+      
+      setCategories(validCategories);
+      setSubcategories(validSubcategories);
     } catch (error) {
       console.error('Error fetching data:', error);
+      setCategories([]);
+      setSubcategories([]);
     } finally {
       setLoading(false);
     }

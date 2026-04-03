@@ -1,23 +1,105 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { staticCategories } from '@/lib/categories';
+import { MongoClient, Db } from 'mongodb';
+
+// Helper function to get category info from static categories
+function getCategoryInfo(categoryId: string) {
+  const cat = staticCategories.find(c => c.id === categoryId);
+  return cat ? { id: cat.id, name: cat.name, slug: cat.slug } : null;
+}
 
 // GET all subcategories
 export async function GET() {
   try {
-    const subcategories = await prisma.subcategory.findMany({
-      include: {
-        category: true,
-        _count: {
-          select: { products: true },
+    let subcategories;
+    try {
+      subcategories = await prisma.subcategory.findMany({
+        include: {
+          category: true,
+          _count: {
+            select: { products: true },
+          },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+      });
+    } catch (prismaError) {
+      console.log('Prisma failed fetching subcategories, using MongoDB native');
+      
+      // Fallback: fetch directly from MongoDB
+      const uri = process.env.DATABASE_URL || 'mongodb://mongo:yWmmVabDenngmApSsOLydYuqqqkXElPl@caboose.proxy.rlwy.net:36367/cynkare?authSource=admin&directConnection=true&retryWrites=false';
+      const client = new MongoClient(uri);
+      try {
+        await client.connect();
+        const db = client.db();
+        const collection = db.collection('Subcategory');
+        
+        const cursor = collection.find({}).sort({ createdAt: -1 });
+        const docs = await cursor.toArray();
+        
+        // Map to include category info from static categories
+        subcategories = docs.map(doc => ({
+          id: doc._id?.toString() || doc.id,
+          name: doc.name,
+          slug: doc.slug,
+          categoryId: doc.categoryId,
+          category: getCategoryInfo(doc.categoryId) || { id: '', name: '', slug: '' },
+          _count: { products: 0 },
+          createdAt: doc.createdAt,
+          updatedAt: doc.updatedAt,
+        }));
+      } finally {
+        await client.close();
+      }
+    }
     return NextResponse.json(subcategories);
   } catch (error) {
     console.error('Error fetching subcategories:', error);
     // Return empty array instead of 500 to prevent client crashes
     return NextResponse.json([]);
+  }
+}
+
+// Helper to create subcategory using MongoDB native driver
+async function createSubcategoryNative(name: string, slug: string, categoryId: string) {
+  const uri = process.env.DATABASE_URL || 'mongodb://mongo:yWmmVabDenngmApSsOLydYuqqqkXElPl@caboose.proxy.rlwy.net:36367/cynkare?authSource=admin&directConnection=true&retryWrites=false';
+  const client = new MongoClient(uri);
+  
+  try {
+    await client.connect();
+    const db = client.db();
+    const collection = db.collection('Subcategory');
+    
+    const categoryInfo = getCategoryInfo(categoryId);
+    if (!categoryInfo) {
+      throw new Error('Invalid category ID');
+    }
+    
+    // Insert the subcategory
+    const result = await collection.insertOne({
+      name,
+      slug,
+      categoryId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    
+    // Return with embedded category info (like Prisma would)
+    return {
+      id: result.insertedId.toString(),
+      name,
+      slug,
+      categoryId,
+      category: {
+        id: categoryInfo.id,
+        name: categoryInfo.name,
+        slug: categoryInfo.slug,
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  } finally {
+    await client.close();
   }
 }
 
@@ -34,33 +116,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const subcategory = await prisma.subcategory.create({
-      data: {
-        name,
-        slug,
-        categoryId,
-      },
-      include: {
-        category: true,
-      },
-    });
+    // First, try to create the subcategory with Prisma
+    let subcategory;
+    try {
+      subcategory = await prisma.subcategory.create({
+        data: {
+          name,
+          slug,
+          categoryId,
+        },
+        include: {
+          category: true,
+        },
+      });
+    } catch (prismaError: unknown) {
+      const error = prismaError as { code?: string };
+      
+      // If category not found (P2003) or other error, use MongoDB native
+      if (error.code === 'P2003' || error.code === 'P2002' || !error.code) {
+        console.log('Prisma failed, using MongoDB native driver');
+        subcategory = await createSubcategoryNative(name, slug, categoryId);
+      } else {
+        throw prismaError;
+      }
+    }
 
     return NextResponse.json(subcategory, { status: 201 });
   } catch (error: unknown) {
     console.error('Error creating subcategory:', error);
-    const prismaError = error as { code?: string };
-    if (prismaError.code === 'P2002') {
-      return NextResponse.json(
-        { error: 'Subcategory with this name already exists in this category' },
-        { status: 400 }
-      );
-    }
-    if (prismaError.code === 'P2003') {
-      return NextResponse.json(
-        { error: 'Category not found' },
-        { status: 404 }
-      );
-    }
     return NextResponse.json(
       { error: 'Failed to create subcategory' },
       { status: 500 }

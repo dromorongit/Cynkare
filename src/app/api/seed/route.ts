@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { MongoClient, Db } from 'mongodb';
 
 const staticCategories = [
   { name: 'Body Lotions', slug: 'body-lotions' },
@@ -8,6 +8,14 @@ const staticCategories = [
   { name: 'Perfumes', slug: 'perfumes' },
   { name: 'Hair & Accessories', slug: 'hair-accessories' },
 ];
+
+async function getDatabase(): Promise<{ client: MongoClient; db: Db }> {
+  const uri = process.env.DATABASE_URL || 'mongodb://mongo:yWmmVabDenngmApSsOLydYuqqqkXElPl@caboose.proxy.rlwy.net:36367/cynkare?authSource=admin&directConnection=true&retryWrites=false';
+  const client = new MongoClient(uri);
+  await client.connect();
+  const db = client.db();
+  return { client, db };
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,26 +27,36 @@ export async function POST(request: NextRequest) {
     }
 
     const results = [];
+    let client: MongoClient | null = null;
 
-    for (const category of staticCategories) {
-      try {
-        const existing = await prisma.category.findUnique({
-          where: { slug: category.slug },
-        });
+    try {
+      const { client: mongoClient, db } = await getDatabase();
+      client = mongoClient;
+      const categoriesCollection = db.collection('Category');
 
-        if (!existing) {
-          const created = await prisma.category.create({
-            data: {
+      for (const category of staticCategories) {
+        try {
+          const existing = await categoriesCollection.findOne({ slug: category.slug });
+
+          if (!existing) {
+            await categoriesCollection.insertOne({
               name: category.name,
               slug: category.slug,
-            },
-          });
-          results.push({ status: 'created', category: created.name });
-        } else {
-          results.push({ status: 'exists', category: category.name });
+              image: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
+            results.push({ status: 'created', category: category.name });
+          } else {
+            results.push({ status: 'exists', category: category.name });
+          }
+        } catch (error) {
+          results.push({ status: 'error', category: category.name, error: String(error) });
         }
-      } catch (error) {
-        results.push({ status: 'error', category: category.name, error: String(error) });
+      }
+    } finally {
+      if (client) {
+        await client.close();
       }
     }
 

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { staticCategories } from '@/lib/categories';
 
 // GET all categories
 export async function GET() {
   try {
+    console.log('Fetching categories from database...');
     const categories = await prisma.category.findMany({
       include: {
         subcategories: true,
@@ -13,11 +15,35 @@ export async function GET() {
       },
       orderBy: { createdAt: 'desc' },
     });
+    console.log('Categories found in DB:', categories.length);
+    
+    // If no categories in database, use static categories
+    if (categories.length === 0) {
+      console.log('Using static categories as fallback');
+      const staticCats = staticCategories.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+        image: cat.image,
+        subcategories: [],
+        _count: { products: 0 }
+      }));
+      return NextResponse.json(staticCats);
+    }
+    
     return NextResponse.json(categories);
   } catch (error) {
     console.error('Error fetching categories:', error);
-    // Return empty array instead of 500 to prevent client crashes
-    return NextResponse.json([]);
+    // Return static categories as fallback on error
+    const staticCats = staticCategories.map(cat => ({
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      image: cat.image,
+      subcategories: [],
+      _count: { products: 0 }
+    }));
+    return NextResponse.json(staticCats);
   }
 }
 
