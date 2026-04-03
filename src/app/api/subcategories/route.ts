@@ -109,6 +109,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, slug, categoryId } = body;
 
+
     if (!name || !slug || !categoryId) {
       return NextResponse.json(
         { error: 'Name, slug, and categoryId are required' },
@@ -116,30 +117,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // First, try to create the subcategory with Prisma
-    let subcategory;
-    try {
-      subcategory = await prisma.subcategory.create({
-        data: {
-          name,
-          slug,
-          categoryId,
-        },
-        include: {
-          category: true,
-        },
-      });
-    } catch (prismaError: unknown) {
-      const error = prismaError as { code?: string };
-      
-      // If category not found (P2003) or other error, use MongoDB native
-      if (error.code === 'P2003' || error.code === 'P2002' || !error.code) {
-        console.log('Prisma failed, using MongoDB native driver');
-        subcategory = await createSubcategoryNative(name, slug, categoryId);
-      } else {
-        throw prismaError;
-      }
-    }
+    // Use MongoDB native driver to create subcategory (more reliable)
+    const subcategory = await createSubcategoryNative(name, slug, categoryId);
 
     return NextResponse.json(subcategory, { status: 201 });
   } catch (error: unknown) {
