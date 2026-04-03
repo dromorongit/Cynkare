@@ -6,7 +6,7 @@ import { staticCategories } from '@/lib/categories';
 export async function GET() {
   try {
     console.log('Fetching categories from database...');
-    let categories = await prisma.category.findMany({
+    const categories = await prisma.category.findMany({
       include: {
         subcategories: true,
         _count: {
@@ -16,37 +16,6 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     });
     console.log('Categories found in DB:', categories.length);
-    
-    // If categories exist but subcategories weren't included, fetch them
-    if (categories.length > 0 && categories[0].subcategories === undefined) {
-      const { MongoClient } = await import('mongodb');
-      const uri = process.env.DATABASE_URL;
-      if (uri) {
-        const client = new MongoClient(uri);
-        try {
-          await client.connect();
-          const db = client.db();
-          const subCatCollection = db.collection('Subcategory');
-          
-          // Get all subcategories
-          const allSubcats = await subCatCollection.find({}).toArray();
-          
-          // Map subcategories to each category
-          categories = categories.map(cat => ({
-            ...cat,
-            subcategories: allSubcats
-              .filter((s: { categoryId: string }) => s.categoryId === cat.id)
-              .map((s: { _id: { toString: () => string }; name: string; slug: string }) => ({
-                id: s._id?.toString() || s._id,
-                name: s.name,
-                slug: s.slug,
-              })),
-          }));
-        } finally {
-          await client.close();
-        }
-      }
-    }
     
     // If no categories in database, use static categories
     if (categories.length === 0) {
