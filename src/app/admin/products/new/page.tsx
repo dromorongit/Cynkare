@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, Upload, X, Save, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Upload, X, Save, Image as ImageIcon, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { staticCategories } from '@/lib/categories';
 
@@ -16,6 +16,11 @@ const categories = staticCategories.map((cat) => ({
 export default function NewProductPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  
+  // File input refs
+  const mainImageInputRef = useRef<HTMLInputElement>(null);
+  const additionalImageInputRef = useRef<HTMLInputElement>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -28,13 +33,12 @@ export default function NewProductPage() {
     stockQuantity: '',
     sku: '',
     images: [] as string[],
+    additionalImages: [] as string[],
     newArrival: false,
     bestSeller: false,
     featured: false,
     onSale: false,
   });
-
-  const [imageInput, setImageInput] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -46,7 +50,83 @@ export default function NewProductPage() {
     }));
   };
 
-  const handleAddImage = () => {
+  // Handle main image file upload
+  const handleMainImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setFormData((prev) => ({
+            ...prev,
+            images: [...prev.images, data.url],
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading main image:', error);
+      alert('Failed to upload image');
+    } finally {
+      setUploading(false);
+      // Reset input
+      if (mainImageInputRef.current) {
+        mainImageInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Handle additional images file upload
+  const handleAdditionalImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setFormData((prev) => ({
+            ...prev,
+            additionalImages: [...prev.additionalImages, data.url],
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading additional image:', error);
+      alert('Failed to upload image');
+    } finally {
+      setUploading(false);
+      // Reset input
+      if (additionalImageInputRef.current) {
+        additionalImageInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Add image URL manually
+  const [imageInput, setImageInput] = useState('');
+  const [additionalImageInput, setAdditionalImageInput] = useState('');
+
+  const handleAddImageUrl = () => {
     if (imageInput.trim()) {
       setFormData((prev) => ({
         ...prev,
@@ -56,11 +136,28 @@ export default function NewProductPage() {
     }
   };
 
-  const handleRemoveImage = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
+  const handleAddAdditionalImageUrl = () => {
+    if (additionalImageInput.trim()) {
+      setFormData((prev) => ({
+        ...prev,
+        additionalImages: [...prev.additionalImages, additionalImageInput.trim()],
+      }));
+      setAdditionalImageInput('');
+    }
+  };
+
+  const handleRemoveImage = (index: number, type: 'main' | 'additional') => {
+    if (type === 'main') {
+      setFormData((prev) => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index),
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        additionalImages: prev.additionalImages.filter((_, i) => i !== index),
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,6 +193,7 @@ export default function NewProductPage() {
           price: parseFloat(formData.price),
           originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : null,
           images: formData.images,
+          additionalImages: formData.additionalImages,
           stockQuantity: parseInt(formData.stockQuantity),
           sku: formData.sku || null,
           categoryId: selectedCat?.id,
@@ -314,11 +412,39 @@ export default function NewProductPage() {
             </div>
           </div>
 
-          {/* Images */}
+          {/* Main Product Image */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Product Images</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Product Image</h2>
             
-            {/* Image URL Input */}
+            {/* File Upload Button */}
+            <div className="mb-4">
+              <input
+                ref={mainImageInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleMainImageUpload}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => mainImageInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50"
+              >
+                <Upload className="w-4 h-4" />
+                {uploading ? 'Uploading...' : 'Upload from Device'}
+              </button>
+            </div>
+
+            {/* OR Divider */}
+            <div className="flex items-center gap-4 mb-4">
+              <div className="flex-1 h-px bg-gray-200"></div>
+              <span className="text-sm text-gray-400">OR</span>
+              <div className="flex-1 h-px bg-gray-200"></div>
+            </div>
+
+            {/* URL Input */}
             <div className="flex gap-2 mb-4">
               <div className="relative flex-1">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2">
@@ -334,7 +460,7 @@ export default function NewProductPage() {
               </div>
               <button
                 type="button"
-                onClick={handleAddImage}
+                onClick={handleAddImageUrl}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 Add
@@ -354,7 +480,7 @@ export default function NewProductPage() {
                     />
                     <button
                       type="button"
-                      onClick={() => handleRemoveImage(index)}
+                      onClick={() => handleRemoveImage(index, 'main')}
                       className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X className="w-4 h-4" />
@@ -369,7 +495,96 @@ export default function NewProductPage() {
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                 <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-500">
-                  Add image URLs above to upload product images
+                  Upload from device or add image URL above
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Additional Images */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Additional Images</h2>
+            
+            {/* File Upload Button */}
+            <div className="mb-4">
+              <input
+                ref={additionalImageInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleAdditionalImageUpload}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => additionalImageInputRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                <Upload className="w-4 h-4" />
+                {uploading ? 'Uploading...' : 'Upload from Device'}
+              </button>
+            </div>
+
+            {/* OR Divider */}
+            <div className="flex items-center gap-4 mb-4">
+              <div className="flex-1 h-px bg-gray-200"></div>
+              <span className="text-sm text-gray-400">OR</span>
+              <div className="flex-1 h-px bg-gray-200"></div>
+            </div>
+
+            {/* URL Input */}
+            <div className="flex gap-2 mb-4">
+              <div className="relative flex-1">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                  <ImageIcon className="w-5 h-5 text-gray-400" />
+                </div>
+                <input
+                  type="url"
+                  value={additionalImageInput}
+                  onChange={(e) => setAdditionalImageInput(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
+                  placeholder="Enter additional image URL"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleAddAdditionalImageUrl}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Additional Image Preview Grid */}
+            {formData.additionalImages.length > 0 && (
+              <div className="grid grid-cols-4 gap-4">
+                {formData.additionalImages.map((img, index) => (
+                  <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group">
+                    <Image
+                      src={img}
+                      alt={`Additional ${index + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(index, 'additional')}
+                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Empty State */}
+            {formData.additionalImages.length === 0 && (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">
+                  Add additional product images (optional)
                 </p>
               </div>
             )}

@@ -56,7 +56,8 @@ model Product {
   shortDescription String?
   price        Float
   originalPrice Float?
-  images       String[]
+  images          String[]
+  additionalImages String[]
   inStock      Boolean      @default(true)
   stockQuantity Int          @default(0)
   sku          String?
