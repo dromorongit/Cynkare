@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     const base64Data = `data:${file.type};base64,${buffer.toString('base64')}`;
 
     // Upload to Cloudinary
-    const uploadResult = await new Promise((resolve, reject) => {
+    const uploadResult = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
       cloudinary.uploader.upload(
         base64Data,
         {
@@ -64,12 +64,14 @@ export async function POST(request: NextRequest) {
         (error, result) => {
           if (error) {
             reject(error);
-          } else {
+          } else if (result) {
             resolve(result);
+          } else {
+            reject(new Error('No result from Cloudinary'));
           }
         }
       );
-    }) as { secure_url: string; public_id: string };
+    });
 
     // Return the Cloudinary URL
     return NextResponse.json({ 
