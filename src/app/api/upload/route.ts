@@ -1,12 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { v2 as cloudinary } from 'cloudinary';
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 // Increase body parser limit for file uploads
 export const runtime = 'nodejs';
@@ -14,11 +6,22 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
     console.log('Cloudinary config:', {
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? 'set' : 'not set',
-      api_key: process.env.CLOUDINARY_API_KEY ? 'set' : 'not set',
-      api_secret: process.env.CLOUDINARY_API_SECRET ? 'set' : 'not set',
+      cloud_name: cloudName ? 'set' : 'not set',
+      api_key: apiKey ? 'set' : 'not set',
+      api_secret: apiSecret ? 'set' : 'not set',
     });
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      return NextResponse.json(
+        { error: 'Cloudinary configuration is missing' },
+        { status: 500 }
+      );
+    }
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -54,45 +57,53 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     
-    // Convert buffer to base64 data URL
-    const base64Data = `data:${file.type};base64,${buffer.toString('base64')}`;
+    // Convert buffer to base64
+    const base64Data = buffer.toString('base64');
 
-    console.log('Uploading to Cloudinary (unsigned)...');
+    // Create signature for authenticated upload
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const signatureString = `timestamp=${timestamp}&upload_preset=cynkare_unsigned&cloud_name=${cloudName}${apiSecret}`;
+    
+    // Use Node's crypto for SHA1
+    const crypto = await import('crypto');
+    const signature = crypto.createHash('sha1').update(signatureString).digest('hex');
 
-    // Use unsigned upload - requires creating an upload preset in Cloudinary
-    // For now, try with resource_type: 'auto' to allow any file type
-    const uploadResult = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
-      cloudinary.uploader.upload(
-        base64Data,
-        {
-          resource_type: 'auto',
-          type: 'upload',
-        },
-        (error, result) => {
-          if (error) {
-            console.error('Cloudinary error:', error);
-            reject(error);
-          } else if (result) {
-            resolve(result);
-          } else {
-            reject(new Error('No result from Cloudinary'));
-          }
-        }
-      );
+    console.log('Uploading to Cloudinary via fetch API...');
+
+    // Upload using fetch API directly
+    const uploadFormData = new FormData();
+    uploadFormData.append('file', base64Data);
+    uploadFormData.append('cloud_name', cloudName);
+    uploadFormData.append('api_key', apiKey);
+    uploadFormData.append('timestamp', timestamp.toString());
+    uploadFormData.append('signature', signature);
+    uploadFormData.append('upload_preset', 'cynkare_unsigned');
+
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+      method: 'POST',
+      body: uploadFormData,
     });
 
-    console.log('Upload successful:', uploadResult.secure_url);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Cloudinary response error:', response.status, errorText);
+      return NextResponse.json(
+        { error: `Cloudinary upload failed: ${response.status}` },
+        { status: 500 }
+      );
+    }
 
-    // Return the Cloudinary URL
+    const result = await response.json();
+    console.log('Upload successful:', result.secure_url);
+
     return NextResponse.json({ 
       success: true, 
-      url: uploadResult.secure_url,
-      publicId: uploadResult.public_id
+      url: result.secure_url,
+      publicId: result.public_id
     }, { status: 201 });
   } catch (error: unknown) {
     console.error('Error uploading to Cloudinary:', error);
     
-    // Log more details about the error
     if (error instanceof Error) {
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
