@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { SlidersHorizontal, X, ChevronRight } from 'lucide-react';
@@ -39,9 +39,9 @@ interface Product {
 }
 
 function CategoryContent() {
-  const searchParams = useSearchParams();
-  const categorySlug = searchParams.get('category');
-  const subcategoryParam = searchParams.get('subcategory');
+  const params = useParams();
+  const categorySlug = params?.slug as string || '';
+  const subcategoryParam = '';
   
   const [category, setCategory] = useState<{ id: string; name: string; slug: string; subcategories: { id: string; name: string; slug: string }[] } | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
