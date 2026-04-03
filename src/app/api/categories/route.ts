@@ -1,37 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { staticCategories } from '@/lib/categories';
+import { MongoClient } from 'mongodb';
 
 // GET all categories
 export async function GET() {
   try {
     console.log('Fetching categories from database...');
-    const categories = await prisma.category.findMany({
-      include: {
-        subcategories: true,
-        _count: {
-          select: { products: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    console.log('Categories found in DB:', categories.length);
     
-    // If no categories in database, use static categories
-    if (categories.length === 0) {
-      console.log('Using static categories as fallback');
-      const staticCats = staticCategories.map(cat => ({
-        id: cat.id,
-        name: cat.name,
-        slug: cat.slug,
-        image: cat.image,
-        subcategories: [],
-        _count: { products: 0 }
+    // Try MongoDB native driver first
+    const uri = process.env.DATABASE_URL || 'mongodb://mongo:yWmmVabDenngmApSsOLydYuqqqkXElPl@caboose.proxy.rlwy.net:36367/cynkare?authSource=admin&directConnection=true&retryWrites=false';
+    const client = new MongoClient(uri);
+    
+    try {
+      await client.connect();
+      const db = client.db();
+      const collection = db.collection('Category');
+      
+      const cursor = collection.find({}).sort({ createdAt: -1 });
+      const categories = await cursor.toArray();
+      
+      console.log('Categories found in DB:', categories.length);
+      
+      // If no categories in database, use static categories
+      if (categories.length === 0) {
+        console.log('Using static categories as fallback');
+        const staticCats = staticCategories.map(cat => ({
+          id: cat.id,
+          name: cat.name,
+          slug: cat.slug,
+          image: cat.image,
+          subcategories: [],
+          _count: { products: 0 }
+        }));
+        return NextResponse.json(staticCats);
+      }
+      
+      // Map categories to include subcategories and count
+      const categoriesWithData = await Promise.all(categories.map(async (cat) => {
+        // Get subcategories
+        const subcollection = db.collection('Subcategory');
+        const subcategories = await subcollection.find({ categoryId: cat._id.toString() }).toArray();
+        
+        // Get product count
+        const productCollection = db.collection('Product');
+        const productCount = await productCollection.countDocuments({ categoryId: cat._id.toString() });
+        
+        return {
+          id: cat._id.toString(),
+          name: cat.name,
+          slug: cat.slug,
+          image: cat.image || null,
+          subcategories: subcategories.map(s => ({
+            id: s._id.toString(),
+            name: s.name,
+            slug: s.slug,
+          })),
+          _count: { products: productCount }
+        };
       }));
-      return NextResponse.json(staticCats);
+      
+      return NextResponse.json(categoriesWithData);
+    } finally {
+      await client.close();
     }
-    
-    return NextResponse.json<typeof categories>(categories);
   } catch (error) {
     console.error('Error fetching categories:', error);
     // Return static categories as fallback on error
@@ -60,26 +91,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const category = await prisma.category.create({
-      data: {
+    // Use MongoDB native driver
+    const uri = process.env.DATABASE_URL || 'mongodb://mongo:yWmmVabDenngmApSsOLydYuqqqkXElPl@caboose.proxy.rlwy.net:36367/cynkare?authSource=admin&directConnection=true&retryWrites=false';
+    const client = new MongoClient(uri);
+    
+    try {
+      await client.connect();
+      const db = client.db();
+      const collection = db.collection('Category');
+      
+      const result = await collection.insertOne({
         name,
         slug,
         image: image || null,
-      },
-      include: {
-        subcategories: true,
-      },
-    });
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
 
-    return NextResponse.json(category, { status: 201 });
+      return NextResponse.json({
+        id: result.insertedId.toString(),
+        name,
+        slug,
+        image: image || null,
+        subcategories: [],
+      }, { status: 201 });
+    } finally {
+      await client.close();
+    }
   } catch (error: unknown) {
     console.error('Error creating category:', error);
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
-      return NextResponse.json(
-        { error: 'Category with this name or slug already exists' },
-        { status: 400 }
-      );
-    }
     return NextResponse.json(
       { error: 'Failed to create category' },
       { status: 500 }
