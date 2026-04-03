@@ -31,7 +31,7 @@ export async function GET() {
       return NextResponse.json(staticCats);
     }
     
-    return NextResponse.json(categories as any);
+    return NextResponse.json<typeof categories>(categories);
   } catch (error) {
     console.error('Error fetching categories:', error);
     // Return static categories as fallback on error
