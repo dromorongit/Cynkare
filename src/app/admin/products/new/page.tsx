@@ -43,6 +43,8 @@ export default function NewProductPage() {
   // State for local image previews (before upload)
   const [mainImagePreviews, setMainImagePreviews] = useState<string[]>([]);
   const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -67,6 +69,7 @@ export default function NewProductPage() {
     // Create local previews immediately
     const newPreviews = Array.from(files).map((file) => URL.createObjectURL(file));
     setMainImagePreviews((prev) => [...prev, ...newPreviews]);
+    setError(null);
 
     setUploading(true);
     try {
@@ -85,11 +88,15 @@ export default function NewProductPage() {
             ...prev,
             images: [...prev.images, data.url],
           }));
+        } else {
+          const errorData = await response.json();
+          setError(errorData.error || 'Failed to upload image');
+          console.error('Upload error:', errorData);
         }
       }
     } catch (error) {
       console.error('Error uploading main image:', error);
-      alert('Failed to upload image');
+      setError('Failed to upload image. Please try again.');
     } finally {
       setUploading(false);
       // Reset input
@@ -107,6 +114,7 @@ export default function NewProductPage() {
     // Create local previews immediately
     const newPreviews = Array.from(files).map((file) => URL.createObjectURL(file));
     setAdditionalImagePreviews((prev) => [...prev, ...newPreviews]);
+    setError(null);
 
     setUploading(true);
     try {
@@ -125,11 +133,15 @@ export default function NewProductPage() {
             ...prev,
             additionalImages: [...prev.additionalImages, data.url],
           }));
+        } else {
+          const errorData = await response.json();
+          setError(errorData.error || 'Failed to upload image');
+          console.error('Upload error:', errorData);
         }
       }
     } catch (error) {
       console.error('Error uploading additional image:', error);
-      alert('Failed to upload image');
+      setError('Failed to upload image. Please try again.');
     } finally {
       setUploading(false);
       // Reset input
@@ -186,6 +198,7 @@ export default function NewProductPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
       const slug = formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -198,6 +211,13 @@ export default function NewProductPage() {
         const cleaned = value.replace(/,/g, '');
         return parseFloat(cleaned) || 0;
       };
+      
+      // Validate images are uploaded
+      if (formData.images.length === 0) {
+        setError('Please upload at least one product image before saving');
+        setLoading(false);
+        return;
+      }
       
       // Find subcategory ID if selected
       let subcategoryId = null;
@@ -235,13 +255,17 @@ export default function NewProductPage() {
       });
 
       if (response.ok) {
-        router.push('/admin/products');
+        setSuccess('Product created successfully!');
+        setTimeout(() => {
+          router.push('/admin/products');
+        }, 1500);
       } else {
-        alert('Failed to create product');
+        const errorData = await response.json();
+        setError(errorData.error || 'Failed to create product');
       }
     } catch (error) {
       console.error('Error creating product:', error);
-      alert('Error creating product');
+      setError('Error creating product. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -475,6 +499,13 @@ export default function NewProductPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Product Image</h2>
             
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                {error}
+              </div>
+            )}
+            
             {/* File Upload Button */}
             <div className="mb-4">
               <input
@@ -559,6 +590,11 @@ export default function NewProductPage() {
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <span className="text-white text-xs">Uploading...</span>
                     </div>
+                    {uploading && index === mainImagePreviews.length - 1 && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <span className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -735,17 +771,29 @@ export default function NewProductPage() {
 
           {/* Submit Buttons */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            {/* Error Message */}
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                {error}
+              </div>
+            )}
+            {/* Success Message */}
+            {success && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm">
+                {success}
+              </div>
+            )}
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || uploading}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50"
             >
-              {loading ? (
+              {loading || uploading ? (
                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <Save className="w-5 h-5" />
               )}
-              {loading ? 'Saving...' : 'Save Product'}
+              {loading ? 'Saving...' : uploading ? 'Uploading images...' : 'Save Product'}
             </button>
           </div>
         </div>
