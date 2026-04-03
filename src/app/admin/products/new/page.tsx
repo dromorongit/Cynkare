@@ -193,6 +193,12 @@ export default function NewProductPage() {
       // Get category ID
       const selectedCat = categories.find((c) => c.name === formData.category);
       
+      // Parse price values (remove commas if present)
+      const parsePrice = (value: string) => {
+        const cleaned = value.replace(/,/g, '');
+        return parseFloat(cleaned) || 0;
+      };
+      
       // Find subcategory ID if selected
       let subcategoryId = null;
       if (formData.subcategory) {
@@ -213,8 +219,8 @@ export default function NewProductPage() {
           name: formData.name,
           slug,
           description: formData.description,
-          price: parseFloat(formData.price),
-          originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : null,
+          price: parsePrice(formData.price),
+          originalPrice: formData.originalPrice ? parsePrice(formData.originalPrice) : null,
           images: formData.images,
           additionalImages: formData.additionalImages,
           stockQuantity: parseInt(formData.stockQuantity),
