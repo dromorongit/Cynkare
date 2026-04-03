@@ -14,7 +14,6 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    // Log environment info for debugging
     console.log('Cloudinary config:', {
       cloud_name: process.env.CLOUDINARY_CLOUD_NAME ? 'set' : 'not set',
       api_key: process.env.CLOUDINARY_API_KEY ? 'set' : 'not set',
@@ -58,17 +57,16 @@ export async function POST(request: NextRequest) {
     // Convert buffer to base64 data URL
     const base64Data = `data:${file.type};base64,${buffer.toString('base64')}`;
 
-    console.log('Uploading to Cloudinary...');
+    console.log('Uploading to Cloudinary (unsigned)...');
 
-    // Upload to Cloudinary
+    // Use unsigned upload - requires creating an upload preset in Cloudinary
+    // For now, try with resource_type: 'auto' to allow any file type
     const uploadResult = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
       cloudinary.uploader.upload(
         base64Data,
         {
-          folder: 'cynkare-products',
-          use_filename: true,
-          unique_filename: true,
-          overwrite: false,
+          resource_type: 'auto',
+          type: 'upload',
         },
         (error, result) => {
           if (error) {
