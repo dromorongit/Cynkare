@@ -9,20 +9,5 @@
     "numReplicas": 1,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
-  },
-  "env": {
-    "DATABASE_URL": {
-      "description": "MongoDB connection string",
-      "value": "mongodb://mongo:yWmmVabDenngmApSsOLydYuqqqkXElPl@caboose.proxy.rlwy.net:36367/cynkare?authSource=admin&directConnection=true&retryWrites=false"
-    },
-    "CLOUDINARY_CLOUD_NAME": {
-      "value": "dbf3y9uya"
-    },
-    "CLOUDINARY_API_KEY": {
-      "value": "599333253283316"
-    },
-    "CLOUDINARY_API_SECRET": {
-      "value": "EkMb4WrqBQjkNGip1MaYlOkLN9w"
-    }
   }
 }
