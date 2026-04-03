@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient, ObjectId } from 'mongodb';
+import { staticCategories } from '@/lib/categories';
 
 // GET all products
 export async function GET(request: NextRequest) {
@@ -46,13 +47,26 @@ export async function GET(request: NextRequest) {
         
         try {
           if (product.categoryId) {
-            const category = await categoryCollection.findOne({ _id: new ObjectId(product.categoryId) });
-            if (category) {
-              categoryInfo = {
-                id: category._id.toString(),
-                name: category.name,
-                slug: category.slug,
-              };
+            // Try to find by ObjectId first
+            if (ObjectId.isValid(product.categoryId) && product.categoryId.length === 24) {
+              const category = await categoryCollection.findOne({ _id: new ObjectId(product.categoryId) });
+              if (category) {
+                categoryInfo = {
+                  id: category._id.toString(),
+                  name: category.name,
+                  slug: category.slug,
+                };
+              }
+            } else {
+              // It's a static category ID (like "1"), try to find by slug
+              const staticCat = staticCategories.find(c => c.id === product.categoryId);
+              if (staticCat) {
+                categoryInfo = {
+                  id: staticCat.id,
+                  name: staticCat.name,
+                  slug: staticCat.slug,
+                };
+              }
             }
           }
         } catch {
@@ -61,13 +75,15 @@ export async function GET(request: NextRequest) {
         
         try {
           if (product.subcategoryId) {
-            const subcategory = await subcategoryCollection.findOne({ _id: new ObjectId(product.subcategoryId) });
-            if (subcategory) {
-              subcategoryInfo = {
-                id: subcategory._id.toString(),
-                name: subcategory.name,
-                slug: subcategory.slug,
-              };
+            if (ObjectId.isValid(product.subcategoryId) && product.subcategoryId.length === 24) {
+              const subcategory = await subcategoryCollection.findOne({ _id: new ObjectId(product.subcategoryId) });
+              if (subcategory) {
+                subcategoryInfo = {
+                  id: subcategory._id.toString(),
+                  name: subcategory.name,
+                  slug: subcategory.slug,
+                };
+              }
             }
           }
         } catch {
@@ -134,16 +150,22 @@ export async function POST(request: NextRequest) {
       await client.connect();
       const db = client.db();
       
-      // Check if category exists in database
       const categoryCollection = db.collection('Category');
-      const category = await categoryCollection.findOne({ _id: new ObjectId(categoryId) });
       
-      // If not found by ObjectId, try by string id (for static categories)
-      const finalCategoryId = category ? category._id : categoryId;
+      // Check if categoryId is a valid ObjectId or a static category ID
+      let finalCategoryId = categoryId;
+      if (categoryId && ObjectId.isValid(categoryId) && categoryId.length === 24) {
+        // It's a valid ObjectId, try to find the category
+        const category = await categoryCollection.findOne({ _id: new ObjectId(categoryId) });
+        if (category) {
+          finalCategoryId = category._id;
+        }
+      }
+      // If categoryId is not a valid ObjectId (e.g., "1" for static categories), use it as-is
       
       // Check if subcategory exists if provided
       let finalSubcategoryId = null;
-      if (subcategoryId) {
+      if (subcategoryId && ObjectId.isValid(subcategoryId) && subcategoryId.length === 24) {
         try {
           const subcategoryCollection = db.collection('Subcategory');
           const subcategory = await subcategoryCollection.findOne({ _id: new ObjectId(subcategoryId) });
@@ -188,13 +210,21 @@ export async function POST(request: NextRequest) {
       let categoryInfo = null;
       if (createdProduct?.categoryId) {
         try {
-          const cat = await categoryCollection.findOne({ _id: new ObjectId(createdProduct.categoryId) });
-          if (cat) {
-            categoryInfo = { id: cat._id.toString(), name: cat.name, slug: cat.slug };
+          // Check if it's a valid ObjectId
+          if (ObjectId.isValid(createdProduct.categoryId) && createdProduct.categoryId.length === 24) {
+            const cat = await categoryCollection.findOne({ _id: new ObjectId(createdProduct.categoryId) });
+            if (cat) {
+              categoryInfo = { id: cat._id.toString(), name: cat.name, slug: cat.slug };
+            }
+          } else {
+            // It's a static category ID, use static categories
+            const staticCat = staticCategories.find(c => c.id === createdProduct.categoryId);
+            if (staticCat) {
+              categoryInfo = { id: staticCat.id, name: staticCat.name, slug: staticCat.slug };
+            }
           }
         } catch {
-          // Category might be a static category with string ID
-          categoryInfo = { id: createdProduct.categoryId.toString(), name: 'Unknown', slug: 'unknown' };
+          // Category might not exist
         }
       }
 
