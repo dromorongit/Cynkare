@@ -66,11 +66,9 @@ export async function POST(request: NextRequest) {
         base64Data,
         {
           folder: 'cynkare-products',
-          transformation: [
-            { width: 1200, height: 1200, crop: 'limit' },
-            { quality: 'auto:good' },
-            { fetch_format: 'auto' },
-          ],
+          use_filename: true,
+          unique_filename: true,
+          overwrite: false,
         },
         (error, result) => {
           if (error) {
