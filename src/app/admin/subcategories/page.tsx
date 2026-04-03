@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Edit2, Trash2, FolderTree, X } from 'lucide-react';
-import { staticCategories } from '@/lib/categories';
 
 interface Subcategory {
   id: string;
@@ -19,6 +18,7 @@ interface Subcategory {
 }
 
 export default function AdminSubcategoriesPage() {
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingSubcategory, setEditingSubcategory] = useState<Subcategory | null>(null);
@@ -38,8 +38,15 @@ export default function AdminSubcategoriesPage() {
     try {
       setLoading(true);
       
-      const subcategoriesRes = await fetch('/api/subcategories');
+      const [categoriesRes, subcategoriesRes] = await Promise.all([
+        fetch('/api/categories'),
+        fetch('/api/subcategories'),
+      ]);
+      
+      const categoriesData = await categoriesRes.json();
       const subcategoriesData = await subcategoriesRes.json();
+      
+      setCategories(categoriesData);
       setSubcategories(subcategoriesData);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -128,7 +135,7 @@ export default function AdminSubcategoriesPage() {
     }
   };
 
-  const groupedSubcategories = staticCategories.map((category) => ({
+  const groupedSubcategories = categories.map((category) => ({
     category,
     subcategories: subcategories.filter((s) => s.category.id === category.id),
   })).filter((group) => group.subcategories.length > 0);
@@ -258,7 +265,7 @@ export default function AdminSubcategoriesPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent focus:border-accent"
                 >
                   <option value="">Select category</option>
-                  {staticCategories.map((cat) => (
+                  {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
                     </option>
