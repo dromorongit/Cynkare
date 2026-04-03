@@ -223,8 +223,6 @@ export default function NewProductPage() {
     }
   };
 
-  const selectedCategory = categories.find((c) => c.name === formData.category);
-
   // Fetch subcategories when category is selected
   const [availableSubcategories, setAvailableSubcategories] = useState<{ id: string; name: string }[]>([]);
 
