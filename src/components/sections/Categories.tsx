@@ -1,12 +1,35 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { staticCategories } from '@/lib/categories';
 
+interface Subcategory {
+  id: string;
+  name: string;
+  slug: string;
+  category: {
+    id: string;
+  };
+}
+
 export default function Categories() {
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const categories = staticCategories;
+
+
+  useEffect(() => {
+    fetch('/api/subcategories')
+      .then(res => res.json())
+      .then(data => setSubcategories(data || []))
+      .catch(() => setSubcategories([]));
+  }, []);
+
+  const getSubcategoryCount = (categoryId: string) => {
+    return subcategories.filter(s => s.category?.id === categoryId).length;
+  };
 
   return (
     <section className="py-20 bg-primary">
@@ -61,7 +84,7 @@ export default function Categories() {
                         {category.name}
                       </span>
                       <span className="text-white/80 text-xs mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        {category.subcategories?.length || 0} subcategories
+                        {getSubcategoryCount(category.id)} subcategories
                       </span>
                     </div>
                   </div>
