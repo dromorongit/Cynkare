@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { staticCategories } from '@/lib/categories';
-import { MongoClient, Db } from 'mongodb';
+import { MongoClient } from 'mongodb';
 
 // Helper function to get category info from static categories
 function getCategoryInfo(categoryId: string) {
@@ -23,7 +23,7 @@ export async function GET() {
         },
         orderBy: { createdAt: 'desc' },
       });
-    } catch (prismaError) {
+    } catch {
       console.log('Prisma failed fetching subcategories, using MongoDB native');
       
       // Fallback: fetch directly from MongoDB
