@@ -7,18 +7,10 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-    const apiKey = process.env.CLOUDINARY_API_KEY;
-    const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
-    console.log('Cloudinary config:', {
-      cloud_name: cloudName ? 'set' : 'not set',
-      api_key: apiKey ? 'set' : 'not set',
-      api_secret: apiSecret ? 'set' : 'not set',
-    });
-
-    if (!cloudName || !apiKey || !apiSecret) {
+    if (!cloudName) {
       return NextResponse.json(
-        { error: 'Cloudinary configuration is missing' },
+        { error: 'Cloudinary cloud name is missing' },
         { status: 500 }
       );
     }
@@ -60,23 +52,12 @@ export async function POST(request: NextRequest) {
     // Convert buffer to base64
     const base64Data = buffer.toString('base64');
 
-    // Create signature for authenticated upload
-    const timestamp = Math.round(new Date().getTime() / 1000);
-    const signatureString = `timestamp=${timestamp}&upload_preset=cynkare_unsigned&cloud_name=${cloudName}${apiSecret}`;
-    
-    // Use Node's crypto for SHA1
-    const crypto = await import('crypto');
-    const signature = crypto.createHash('sha1').update(signatureString).digest('hex');
-
     console.log('Uploading to Cloudinary via fetch API...');
 
-    // Upload using fetch API directly
+    // Upload using fetch API directly - for unsigned uploads, no signature needed
     const uploadFormData = new FormData();
     uploadFormData.append('file', base64Data);
     uploadFormData.append('cloud_name', cloudName);
-    uploadFormData.append('api_key', apiKey);
-    uploadFormData.append('timestamp', timestamp.toString());
-    uploadFormData.append('signature', signature);
     uploadFormData.append('upload_preset', 'cynkare_unsigned');
 
     const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
