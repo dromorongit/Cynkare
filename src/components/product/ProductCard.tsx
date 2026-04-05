@@ -81,10 +81,10 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
               {product.name}
             </h3>
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-price">₵{formatPrice(convertToGHS(product.price))}</span>
+              <span className="text-price">{formatPrice(convertToGHS(product.price))}</span>
               {product.originalPrice && (
                 <span className="text-sm text-gray-400 line-through">
-                  ₵{formatPrice(convertToGHS(product.originalPrice))}
+                  {formatPrice(convertToGHS(product.originalPrice))}
                 </span>
               )}
             </div>
