@@ -99,6 +99,8 @@ export default function NewProductPage() {
       setError('Failed to upload image. Please try again.');
     } finally {
       setUploading(false);
+      // Clear local previews after upload completes
+      setMainImagePreviews([]);
       // Reset input
       if (mainImageInputRef.current) {
         mainImageInputRef.current.value = '';
@@ -144,6 +146,8 @@ export default function NewProductPage() {
       setError('Failed to upload image. Please try again.');
     } finally {
       setUploading(false);
+      // Clear local previews after upload completes
+      setAdditionalImagePreviews([]);
       // Reset input
       if (additionalImageInputRef.current) {
         additionalImageInputRef.current.value = '';
