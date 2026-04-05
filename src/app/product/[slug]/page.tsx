@@ -20,8 +20,10 @@ interface Product {
   price: number;
   originalPrice?: number;
   images: string[];
+  additionalImages?: string[];
   inStock: boolean;
   stockQuantity: number;
+  sku?: string;
   featured: boolean;
   newArrival: boolean;
   bestSeller: boolean;
@@ -49,6 +51,9 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  
+  // Combine main and additional images for gallery
+  const allImages = product ? [...(product.images || []), ...(product.additionalImages || [])] : [];
   
   const addItem = useCartStore((state) => state.addItem);
   const openCart = useCartStore((state) => state.openCart);
@@ -135,9 +140,9 @@ export default function ProductPage() {
           >
             {/* Main Image */}
             <div className="relative aspect-square bg-secondary mb-4 overflow-hidden">
-              {product.images && product.images.length > 0 ? (
+              {allImages.length > 0 ? (
                 <Image
-                  src={product.images[selectedImage]}
+                  src={allImages[selectedImage]}
                   alt={product.name}
                   fill
                   className="object-cover hover:scale-105 transition-transform duration-500"
@@ -151,9 +156,9 @@ export default function ProductPage() {
             </div>
             
             {/* Thumbnail Gallery */}
-            {product.images && product.images.length > 1 && (
+            {allImages.length > 1 && (
               <div className="flex gap-4">
-                {product.images.map((image, index) => (
+                {allImages.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
@@ -180,9 +185,17 @@ export default function ProductPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <p className="text-accent text-sm font-medium mb-2">{product.category.name}</p>
+            {product.subcategory && (
+              <p className="text-gray-500 text-sm mb-2">{product.subcategory.name}</p>
+            )}
             <h1 className="text-section font-heading text-text mb-4">
               {product.name}
             </h1>
+            
+            {/* SKU */}
+            {product.sku && (
+              <p className="text-gray-500 text-sm mb-2">SKU: {product.sku}</p>
+            )}
             
             {/* Rating */}
             {product.rating && (
@@ -264,7 +277,10 @@ export default function ProductPage() {
             </a>
 
             {/* Stock Status */}
-            <div className="mt-6 pt-6 border-t border-accent/20">
+            <div className="mt-6 pt-6 border-t border-accent/20 space-y-2">
+              <p className="text-gray-600">
+                <span className="font-medium">Stock:</span> {product.stockQuantity} items available
+              </p>
               {product.inStock ? (
                 <p className="text-green-600 flex items-center gap-2">
                   <span className="w-2 h-2 bg-green-500 rounded-full"></span>
