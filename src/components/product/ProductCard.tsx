@@ -59,18 +59,26 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
               )}
             </div>
 
-            {/* Quick Add Button */}
+            {/* Quick Actions - Add to Cart and View More */}
             <motion.div
               initial={{ opacity: 0 }}
               whileHover={{ opacity: 1 }}
               className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
             >
-              <button
-                onClick={handleAddToCart}
-                className="w-full bg-white text-text py-3 font-medium hover:bg-accent transition-colors duration-300"
-              >
-                Add to Cart
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleAddToCart}
+                  className="flex-1 bg-white text-text py-3 font-medium hover:bg-accent hover:text-white transition-colors duration-300"
+                >
+                  Add to Cart
+                </button>
+                <Link
+                  href={`/product/${product.slug}`}
+                  className="flex-1 bg-accent text-white py-3 font-medium hover:bg-accent/80 transition-colors duration-300 text-center"
+                >
+                  View More
+                </Link>
+              </div>
             </motion.div>
           </div>
 
