@@ -34,6 +34,13 @@ export const staticCategories = [
     image: 'https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?w=1200&h=600&fit=crop', 
     subcategories: [] 
   },
+  { 
+    id: '6', 
+    name: 'Skincare Sets', 
+    slug: 'skincare-sets', 
+    image: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=1200&h=600&fit=crop', 
+    subcategories: [] 
+  },
 ];
 
 export const getCategoryBySlug = (slug: string) => {

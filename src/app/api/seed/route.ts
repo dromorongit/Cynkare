@@ -7,6 +7,7 @@ const staticCategories = [
   { name: 'Face Creams & Cleansers', slug: 'face-creams-cleansers' },
   { name: 'Perfumes', slug: 'perfumes' },
   { name: 'Hair & Accessories', slug: 'hair-accessories' },
+  { name: 'Skincare Sets', slug: 'skincare-sets' },
 ];
 
 async function getDatabase(): Promise<{ client: MongoClient; db: Db }> {
