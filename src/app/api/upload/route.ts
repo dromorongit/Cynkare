@@ -49,14 +49,16 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     
-    // Convert buffer to base64
+    // Convert buffer to base64 with proper data URI prefix
+    const mimeType = file.type;
     const base64Data = buffer.toString('base64');
+    const dataUri = `data:${mimeType};base64,${base64Data}`;
 
     console.log('Uploading to Cloudinary via fetch API...');
 
     // Upload using fetch API directly - for unsigned uploads, no signature needed
     const uploadFormData = new FormData();
-    uploadFormData.append('file', base64Data);
+    uploadFormData.append('file', dataUri);
     uploadFormData.append('cloud_name', cloudName);
     uploadFormData.append('upload_preset', 'cynkare_unsigned');
 
